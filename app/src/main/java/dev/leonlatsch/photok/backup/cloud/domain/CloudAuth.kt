@@ -33,9 +33,22 @@ interface CloudAuth {
     val connection: StateFlow<CloudConnection>
 
     /**
-     * Runs the loopback OAuth flow and stores the resulting session.
+     * Error from an OAuth flow that ran in the background. Kept until [clearLastError] is
+     * called so a screen that was not composed during the flow can still show it.
      */
-    suspend fun connect(browser: OAuthBrowser): Result<CloudConnection>
+    val lastError: StateFlow<CloudError?>
+
+    /**
+     * Starts the loopback OAuth flow and returns immediately. The flow runs in an
+     * application-scoped coroutine behind a foreground service, so it survives the screen
+     * (and the vault auto-lock) while the browser is in front. Observe [connection] and
+     * [lastError] for the result.
+     */
+    fun connect(browser: OAuthBrowser)
+
+    fun cancelConnect()
+
+    fun clearLastError()
 
     suspend fun disconnect()
 

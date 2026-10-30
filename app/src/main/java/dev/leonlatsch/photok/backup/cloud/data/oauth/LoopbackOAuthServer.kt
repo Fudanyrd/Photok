@@ -18,9 +18,13 @@ package dev.leonlatsch.photok.backup.cloud.data.oauth
 
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import java.io.Closeable
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketTimeoutException
@@ -32,51 +36,115 @@ import java.net.URI
  * Google blocks custom URI schemes for Android OAuth clients, so the consent page redirects
  * to `http://localhost:<port>` and this server hands the code to the waiting coroutine. It
  * only listens on the loopback interface and stops after the first valid redirect.
+ *
+ * Both IPv4 and IPv6 loopback are bound when possible: `localhost` may resolve to either
+ * depending on the browser and the device.
  */
 class LoopbackOAuthServer(
     private val host: String = "localhost",
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
 ) : Closeable {
 
-    private val serverSocket = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+    private val serverSockets: List<ServerSocket> = createServerSockets()
 
     val redirectUri: String
-        get() = "http://$host:${serverSocket.localPort}"
+        get() = "http://$host:${serverSockets.first().localPort}"
 
     suspend fun awaitRedirect(): OAuthRedirect = withContext(Dispatchers.IO) {
-        serverSocket.soTimeout = timeoutMillis.toInt()
+        serverSockets.forEach { socket -> socket.soTimeout = timeoutMillis.toInt() }
 
         try {
-            while (true) {
-                serverSocket.accept().use { socket ->
-                    socket.soTimeout = REQUEST_TIMEOUT_MILLIS
+            supervisorScope {
+                val ipv4 = async(Dispatchers.IO) { acceptRedirect(serverSockets.first()) }
+                val ipv6 = serverSockets.getOrNull(1)?.let { socket ->
+                    async(Dispatchers.IO) { acceptRedirect(socket) }
+                }
 
-                    val requestLine = socket.getInputStream()
-                        .bufferedReader()
-                        .readLine()
-                    val target = requestLine?.split(' ')?.getOrNull(1)
-                    val uri = target?.let { runCatching { URI(it) }.getOrNull() }
-
-                    if (uri == null || uri.path != "/") {
-                        respond(socket, notFound = true, body = errorPage())
+                try {
+                    if (ipv6 == null) {
+                        ipv4.await()
                     } else {
-                        val redirect = parseOAuthRedirect(uri.rawQuery)
-                        respond(
-                            socket = socket,
-                            notFound = false,
-                            body = if (redirect.error == null) successPage() else errorPage(),
-                        )
-                        return@withContext redirect
+                        select<OAuthRedirect> {
+                            ipv4.onAwait { it }
+                            ipv6.onAwait { it }
+                        }
                     }
+                } finally {
+                    ipv4.cancel()
+                    ipv6?.cancel()
+                    close()
                 }
             }
-            @Suppress("UNREACHABLE_CODE")
-            error("unreachable")
         } catch (e: SocketTimeoutException) {
             throw CloudError.AuthorizationFailed(e)
         } finally {
             close()
         }
+    }
+
+    private fun acceptRedirect(socket: ServerSocket): OAuthRedirect {
+        while (true) {
+            socket.accept().use { client ->
+                client.soTimeout = REQUEST_TIMEOUT_MILLIS
+
+                val requestLine = client.getInputStream()
+                    .bufferedReader()
+                    .readLine()
+                val target = requestLine?.split(' ')?.getOrNull(1)
+                val uri = target?.let { runCatching { URI(it) }.getOrNull() }
+
+                if (uri == null || uri.path != "/") {
+                    respond(client, notFound = true, body = errorPage())
+                } else {
+                    val redirect = parseOAuthRedirect(uri.rawQuery)
+
+                    if (redirect.code == null && redirect.error == null) {
+                        // A bare / (for example a browser probe) is not the redirect yet.
+                        respond(client, notFound = true, body = errorPage())
+                    } else {
+                        respond(
+                            socket = client,
+                            notFound = false,
+                            body = if (redirect.error == null) successPage() else errorPage(),
+                        )
+                        return redirect
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Binds IPv4 loopback first, then tries the same port on IPv6 loopback. A device
+     * without one of the two still gets a working server on the other.
+     */
+    private fun createServerSockets(): List<ServerSocket> {
+        val sockets = mutableListOf<ServerSocket>()
+
+        val ipv4 = runCatching {
+            ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+        }.getOrNull()
+
+        if (ipv4 != null) {
+            sockets += ipv4
+
+            runCatching {
+                ServerSocket().apply {
+                    reuseAddress = true
+                    bind(
+                        InetSocketAddress(InetAddress.getByName("::1"), ipv4.localPort),
+                        1,
+                    )
+                }
+            }.onSuccess { sockets += it }
+        } else {
+            runCatching {
+                ServerSocket(0, 1, InetAddress.getByName("::1"))
+            }.onSuccess { sockets += it }
+        }
+
+        check(sockets.isNotEmpty()) { "No loopback address available" }
+        return sockets
     }
 
     private fun respond(socket: Socket, notFound: Boolean, body: String) {
@@ -124,11 +192,11 @@ class LoopbackOAuthServer(
     """.trimIndent()
 
     override fun close() {
-        runCatching { serverSocket.close() }
+        serverSockets.forEach { socket -> runCatching { socket.close() } }
     }
 
     companion object {
-        private const val DEFAULT_TIMEOUT_MILLIS = 5 * 60_000L
+        private const val DEFAULT_TIMEOUT_MILLIS = 10 * 60_000L
         private const val REQUEST_TIMEOUT_MILLIS = 5_000
     }
 }

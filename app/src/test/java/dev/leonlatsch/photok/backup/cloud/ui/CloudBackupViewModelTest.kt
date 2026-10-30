@@ -59,6 +59,7 @@ class CloudBackupViewModelTest {
     private lateinit var auth: CloudAuth
     private lateinit var repository: CloudBackupRepository
     private lateinit var createBackup: CreateCloudBackupUseCase
+    private lateinit var lastError: MutableStateFlow<CloudError?>
 
     @Before
     fun setup() {
@@ -68,7 +69,10 @@ class CloudBackupViewModelTest {
         auth = mockk(relaxed = true)
         repository = mockk(relaxed = true)
         createBackup = mockk(relaxed = true)
+        lastError = MutableStateFlow(null)
 
+        every { auth.lastError } returns lastError
+        every { auth.clearLastError() } answers { lastError.value = null }
         every { repository.tempFile(any()) } answers { File(tempDir, firstArg<String>()) }
     }
 
@@ -188,7 +192,9 @@ class CloudBackupViewModelTest {
         val connection = MutableStateFlow<CloudConnection>(CloudConnection.Disconnected)
         every { auth.configured } returns true
         every { auth.connection } returns connection
-        coEvery { auth.connect(any()) } returns Result.failure(CloudError.NotConfigured())
+        every { auth.connect(any()) } answers {
+            lastError.value = CloudError.NotConfigured()
+        }
 
         val viewModel = viewModel()
 

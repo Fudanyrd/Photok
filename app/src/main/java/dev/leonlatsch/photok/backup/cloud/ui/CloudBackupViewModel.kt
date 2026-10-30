@@ -70,11 +70,25 @@ class CloudBackupViewModel @Inject constructor(
 
         viewModelScope.launch {
             auth.connection.collect { connection ->
+                val wasConnected = _uiState.value.isConnected
                 _uiState.update { it.copy(connection = connection) }
+
+                if (connection is CloudConnection.Connected && !wasConnected) {
+                    refresh()
+                }
 
                 if (connection is CloudConnection.Disconnected) {
                     refreshJob?.cancel()
                     _uiState.update { it.copy(loadingBackups = false) }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            auth.lastError.collect { error ->
+                if (error != null) {
+                    _uiState.update { it.copy(error = error) }
+                    auth.clearLastError()
                 }
             }
         }
@@ -87,6 +101,7 @@ class CloudBackupViewModel @Inject constructor(
     fun handleUiEvent(event: CloudBackupUiEvent) {
         when (event) {
             is CloudBackupUiEvent.ConnectClicked -> connect(event.browser)
+            is CloudBackupUiEvent.CancelConnectClicked -> auth.cancelConnect()
             is CloudBackupUiEvent.DisconnectClicked -> disconnect()
             is CloudBackupUiEvent.RefreshClicked -> refresh()
             is CloudBackupUiEvent.BackupClicked -> startBackup()
@@ -101,18 +116,8 @@ class CloudBackupViewModel @Inject constructor(
     private fun connect(browser: OAuthBrowser) {
         if (!_uiState.value.canInteract) return
 
-        viewModelScope.launch {
-            _uiState.update { it.copy(error = null, message = null) }
-
-            auth.connect(browser)
-                .onSuccess { connection ->
-                    _uiState.update { it.copy(connection = connection) }
-                    refresh()
-                }
-                .onFailure { error ->
-                    _uiState.update { it.copy(error = error.asCloudError()) }
-                }
-        }
+        _uiState.update { it.copy(error = null, message = null) }
+        auth.connect(browser)
     }
 
     private fun disconnect() {

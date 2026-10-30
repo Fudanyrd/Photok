@@ -360,7 +360,13 @@ private fun ConnectionCard(
                     Text(stringResource(R.string.cloud_backup_disconnect))
                 }
 
-                state.configured && !state.isConnecting -> Button(
+                state.isConnecting -> TextButton(
+                    onClick = { onEvent(CloudBackupUiEvent.CancelConnectClicked) },
+                ) {
+                    Text(stringResource(R.string.cloud_backup_cancel))
+                }
+
+                state.configured -> Button(
                     onClick = {
                         browser?.let { onEvent(CloudBackupUiEvent.ConnectClicked(it)) }
                     },
