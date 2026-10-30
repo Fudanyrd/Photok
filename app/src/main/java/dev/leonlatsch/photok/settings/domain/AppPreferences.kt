@@ -107,6 +107,12 @@ object AppPreferences {
         title = R.string.settings_advanced_backup_title,
         summary = R.string.settings_advanced_backup_summary,
     )
+    val CloudBackup = Preference.Simple(
+        key = SettingsActionKeys.KEY_ACTION_CLOUD_BACKUP,
+        icon = R.drawable.ic_cloud,
+        title = R.string.settings_advanced_cloud_backup_title,
+        summary = R.string.settings_advanced_cloud_backup_summary,
+    )
     val DeleteImportedFiles = Preference.Switch(
         key = Config.ADVANCED_DELETE_IMPORTED_FILES,
         icon = R.drawable.ic_delete,

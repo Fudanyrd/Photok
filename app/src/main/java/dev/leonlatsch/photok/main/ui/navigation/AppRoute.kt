@@ -17,6 +17,7 @@
 package dev.leonlatsch.photok.main.ui.navigation
 
 import androidx.navigation3.runtime.NavKey
+import dev.leonlatsch.photok.backup.cloud.ui.CloudBackupMode
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -54,4 +55,7 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data class RestoreBackup(val backupUri: String) : AppRoute
+
+    @Serializable
+    data class CloudBackup(val mode: CloudBackupMode) : AppRoute
 }

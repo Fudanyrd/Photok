@@ -48,6 +48,7 @@ val PrefsScreenConfig = PreferenceScreenConfig(
             summary = R.string.settings_category_advanced_summary,
             preferences = listOf(
                 AppPreferences.Backup,
+                AppPreferences.CloudBackup,
                 AppPreferences.DeleteImportedFiles,
                 AppPreferences.DeleteExportedFiles,
                 AppPreferences.Reset,

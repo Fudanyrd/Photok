@@ -85,6 +85,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.leonlatsch.photok.BuildConfig
 import dev.leonlatsch.photok.R
 import dev.leonlatsch.photok.backup.domain.BackupStrategy
+import dev.leonlatsch.photok.backup.cloud.ui.CloudBackupMode
 import dev.leonlatsch.photok.backup.ui.BackupBottomSheetDialogFragment
 import dev.leonlatsch.photok.backup.ui.ConfirmPasswordDialog
 import dev.leonlatsch.photok.databinding.BindingConverters
@@ -222,6 +223,11 @@ fun SettingsCallbacks(
 
         viewModel.registerPreferenceCallback(SettingsActionKeys.KEY_ACTION_BACKUP) {
             showConfirmPasswordDialogForBackup = true
+            false
+        }
+
+        viewModel.registerPreferenceCallback(SettingsActionKeys.KEY_ACTION_CLOUD_BACKUP) {
+            navigator.navigate(AppRoute.CloudBackup(CloudBackupMode.Manage))
             false
         }
 

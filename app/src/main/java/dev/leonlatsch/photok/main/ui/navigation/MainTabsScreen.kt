@@ -47,6 +47,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import dev.leonlatsch.photok.BuildConfig
+import dev.leonlatsch.photok.backup.cloud.ui.CloudBackupScreen
 import dev.leonlatsch.photok.backup.ui.restore.RestoreBackupScreen
 import dev.leonlatsch.photok.devsettings.ui.compose.DevSettingsScreen
 import dev.leonlatsch.photok.devsettings.ui.compose.PreferencesEditorScreen
@@ -234,6 +235,9 @@ private val tabEntryProvider = entryProvider<NavKey> {
     }
     entry<AppRoute.RestoreBackup> { route ->
         RestoreBackupScreen(backupUri = route.backupUri.toUri())
+    }
+    entry<AppRoute.CloudBackup> { route ->
+        CloudBackupScreen(mode = route.mode)
     }
     proEntries()
 }

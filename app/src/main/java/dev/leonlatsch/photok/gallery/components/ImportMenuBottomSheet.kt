@@ -60,7 +60,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import dev.leonlatsch.photok.R
+import dev.leonlatsch.photok.backup.cloud.ui.CloudBackupMode
+import dev.leonlatsch.photok.main.ui.navigation.AppRoute
 import dev.leonlatsch.photok.model.database.entity.PhotoType
+import dev.leonlatsch.photok.navigation.LocalNavigator
 import dev.leonlatsch.photok.other.extensions.launchAndIgnoreTimer
 import dev.leonlatsch.photok.settings.ui.compose.LocalConfig
 import dev.leonlatsch.photok.ui.theme.AppTheme
@@ -133,6 +136,7 @@ private fun ImportMenuDialogContent(
     val isPreview = LocalInspectionMode.current
 
     val activity = LocalActivity.current
+    val navigator = LocalNavigator.current
 
     Column(
         modifier = modifier.padding(bottom = 12.dp),
@@ -171,6 +175,18 @@ private fun ImportMenuDialogContent(
                     input = arrayOf("application/zip"),
                     activity = activity
                 )
+            }
+        )
+
+        HorizontalDivider()
+
+        ImportMenuItem(
+            text = stringResource(R.string.import_menu_restore_drive_title),
+            description = stringResource(R.string.import_menu_restore_drive_description),
+            iconPainter = painterResource(R.drawable.ic_cloud),
+            onClick = {
+                onDismissRequest()
+                navigator.navigate(AppRoute.CloudBackup(CloudBackupMode.Restore))
             }
         )
     }

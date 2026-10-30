@@ -13,6 +13,43 @@ val isReleaseBuildInvocation: Boolean = gradle.startParameter.taskNames.any { it
 val appVersionName: String by project
 val appVersionCode: String by project
 
+/**
+ * Reads a build credential from a Gradle property, the environment, or the untracked
+ * `.env` file at the repository root. Never commit these values.
+ */
+fun buildCredential(vararg keys: String): String? {
+    val envFile = rootProject.file(".env")
+    val envValues = if (envFile.exists()) {
+        envFile.readLines()
+            .mapNotNull { line ->
+                val trimmed = line.trim()
+                if (trimmed.isEmpty() || trimmed.startsWith("#") || !trimmed.contains('=')) {
+                    null
+                } else {
+                    trimmed.substringBefore('=').trim() to trimmed.substringAfter('=').trim().trim('"')
+                }
+            }
+            .toMap()
+    } else {
+        emptyMap()
+    }
+
+    for (key in keys) {
+        val property = project.findProperty(key) as String?
+        val value = property?.takeIf { it.isNotBlank() }
+            ?: System.getenv(key)?.takeIf { it.isNotBlank() }
+            ?: envValues[key]?.takeIf { it.isNotBlank() }
+
+        if (value != null) return value
+    }
+
+    return null
+}
+
+val driveClientId = buildCredential("DRIVE_CLIENT_ID", "GOOGLE_ID").orEmpty()
+val driveClientSecret = buildCredential("DRIVE_CLIENT_SECRET", "GOOGLE_API_KEY").orEmpty()
+val driveRedirectHost = buildCredential("DRIVE_REDIRECT_HOST") ?: "localhost"
+
 apply(plugin = "com.android.legacy-kapt")
 apply(plugin = "dagger.hilt.android.plugin")
 
@@ -28,6 +65,10 @@ android {
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "DRIVE_CLIENT_ID", "\"$driveClientId\"")
+        buildConfigField("String", "DRIVE_CLIENT_SECRET", "\"$driveClientSecret\"")
+        buildConfigField("String", "DRIVE_REDIRECT_HOST", "\"$driveRedirectHost\"")
 
         base {
             archivesName = "photok-$versionName"
@@ -155,6 +196,10 @@ dependencies {
 
     // DocumentFile
     implementation("androidx.documentfile:documentfile:1.1.0")
+
+    // Google Drive cloud backup
+    implementation("com.squareup.okhttp3:okhttp:5.5.1")
+    implementation("androidx.browser:browser:1.10.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

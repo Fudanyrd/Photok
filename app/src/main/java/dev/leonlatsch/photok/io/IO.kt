@@ -167,6 +167,12 @@ class IO @Inject constructor(
     }
 
     fun getFileName(uri: Uri): String? = try {
+        // Restored cloud downloads are plain files in the cache, not content provider
+        // documents, so the MediaStore query returns nothing for them.
+        if (uri.scheme == "file") {
+            return uri.lastPathSegment
+        }
+
         val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME)
         context.contentResolver.query(uri, projection, null, null, null)?.use {
             if (it.moveToFirst()) {

@@ -22,6 +22,7 @@ object SettingsActionKeys {
     const val KEY_ACTION_HIDE_APP = "action_hide_app"
     const val KEY_ACTION_LANGUAGE = "action_language"
     const val KEY_ACTION_BACKUP = "action_backup_safe"
+    const val KEY_ACTION_CLOUD_BACKUP = "action_cloud_backup"
     const val KEY_ACTION_RECOVERY_PHRASE = "action_recovery_phrase"
     const val KEY_ACTION_BRUTEFORCE_PROTECTION = "action_bruteforce_protection"
     const val KEY_ACTION_INTRUDER_WARNINGS = "action_intruder_warnings"
