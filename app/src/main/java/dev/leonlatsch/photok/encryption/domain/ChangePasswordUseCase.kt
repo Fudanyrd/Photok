@@ -23,6 +23,7 @@ import dev.leonlatsch.photok.encryption.domain.crypto.KeyGen
 import dev.leonlatsch.photok.encryption.domain.models.CreateRequest
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtectionType
 import dev.leonlatsch.photok.settings.data.Config
+import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -49,6 +50,11 @@ class ChangePasswordUseCase @Inject constructor(
             ChangePasswordResult(
                 credentialsCleared = clearOrReencryptCloudCredentials(oldPassword, newPassword),
             )
+        } catch (e: CancellationException) {
+            /**
+             * Avoid cancelling Google credentials when the operation is cancelled.
+             */
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Could not change the vault password")
             clearCloudCredentials()
