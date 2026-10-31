@@ -233,6 +233,7 @@
     <string name="change_password_confirm_new_password">Bekräfta ditt nya lösenord</string>
     <string name="change_password_button">Byt lösenord</string>
     <string name="change_password_done">Lösenordet har bytts</string>
+    <string name="change_password_done_credentials_cleared">Lösenordet ändrades. Drive-uppgifterna rensades; klistra in google.json igen.</string> <!-- TODO: machine translated | EN: Password changed. Drive credentials were cleared; paste google.json again. -->
     <string name="change_password_recovery_phrase_used">Återställningsfras användes — kontroll av gammalt lösenord behövs inte</string>
 
     <!-- HIDE APP -->
@@ -498,8 +499,14 @@
     <string name="cloud_backup_disconnect">Koppla från</string> <!-- TODO: machine translated | EN: Disconnect -->
     <string name="cloud_backup_connecting">Väntar på Google…</string> <!-- TODO: machine translated | EN: Waiting for Google… -->
     <string name="cloud_backup_not_connected">Inte ansluten</string> <!-- TODO: machine translated | EN: Not connected -->
-    <string name="cloud_backup_not_configured">Inte konfigurerad</string> <!-- TODO: machine translated | EN: Not configured -->
-    <string name="cloud_backup_not_configured_help">Google Drive är inte konfigurerat i den här versionen. Lägg till OAuth-uppgifter när du bygger för att aktivera molnbackup.</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. Add OAuth credentials when building to enable cloud backup. -->
+    <string name="cloud_backup_not_configured">Drive-uppgifter har inte ställts in</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
+    <string name="cloud_backup_not_configured_help">Klistra in filen google.json från din Google Cloud OAuth-klient för att aktivera molnbackup.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
+    <string name="cloud_backup_credentials_import">Importera google.json</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_credentials_json">OAuth-klient-JSON</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
+    <string name="cloud_backup_credentials_locked">Uppgifter låsta</string> <!-- TODO: machine translated | EN: Credentials locked -->
+    <string name="cloud_backup_credentials_unlock_title">Lås upp Google Drive</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->
+    <string name="cloud_backup_credentials_unlock_message">Ange lösenordet till ditt valv för att låsa upp de sparade Drive-uppgifterna.</string> <!-- TODO: machine translated | EN: Enter your vault password to unlock the stored Drive credentials. -->
+    <string name="cloud_backup_credentials_unlock">Lås upp</string> <!-- TODO: machine translated | EN: Unlock -->
     <string name="cloud_backup_refresh">Uppdatera</string> <!-- TODO: machine translated | EN: Refresh -->
     <string name="cloud_backup_section_title">Säkerhetskopior i Drive</string> <!-- TODO: machine translated | EN: Backups in Drive -->
     <string name="cloud_backup_empty">Inga säkerhetskopior i Drive ännu.</string> <!-- TODO: machine translated | EN: No backups in Drive yet. -->
@@ -525,7 +532,11 @@
     <string name="cloud_backup_uploaded_with_failures">Säkerhetskopian har laddats upp till Google Drive, men %1$d foton kunde inte läggas till.</string> <!-- TODO: machine translated | EN: Backup uploaded to Google Drive, but %1$d photos could not be added. -->
     <string name="cloud_backup_deleted">%1$s raderades från Google Drive.</string> <!-- TODO: machine translated | EN: Deleted %1$s from Google Drive. -->
     <string name="cloud_backup_dismiss">Stäng</string> <!-- TODO: machine translated | EN: Dismiss -->
-    <string name="cloud_backup_error_not_configured">Google Drive är inte konfigurerat i den här versionen.</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. -->
+    <string name="cloud_backup_error_not_configured">Google Drive-uppgifterna har inte ställts in.</string> <!-- TODO: machine translated | EN: Google Drive credentials are not set up. -->
+    <string name="cloud_backup_error_credentials_locked">Google Drive-uppgifterna är låsta. Ange lösenordet till ditt valv.</string> <!-- TODO: machine translated | EN: Google Drive credentials are locked. Enter your vault password. -->
+    <string name="cloud_backup_error_credentials_invalid">Den JSON:en är inte en giltig Google OAuth-klient. Klistra in google.json från en skrivbordsappklient.</string> <!-- TODO: machine translated | EN: That JSON is not a valid Google OAuth client. Paste the google.json from a Desktop app client. -->
+    <string name="cloud_backup_error_credentials_corrupt">Det gick inte att läsa de sparade Drive-uppgifterna. Klistra in google.json igen.</string> <!-- TODO: machine translated | EN: The stored Drive credentials could not be read. Paste google.json again. -->
+    <string name="cloud_backup_error_wrong_password">Fel valvlösenord.</string> <!-- TODO: machine translated | EN: Wrong vault password. -->
     <string name="cloud_backup_error_not_connected">Anslut till Google Drive först.</string> <!-- TODO: machine translated | EN: Connect to Google Drive first. -->
     <string name="cloud_backup_error_auth">Auktoriseringen för Google Drive misslyckades. Anslut igen.</string> <!-- TODO: machine translated | EN: Google Drive authorization failed. Please connect again. -->
     <string name="cloud_backup_error_quota">Ditt Google Drive-lagringsutrymme är fullt.</string> <!-- TODO: machine translated | EN: Your Google Drive storage is full. -->

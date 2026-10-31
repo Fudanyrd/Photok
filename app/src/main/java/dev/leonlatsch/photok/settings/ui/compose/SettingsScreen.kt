@@ -281,7 +281,7 @@ fun SettingsCallbacks(
     ConfirmPasswordDialog(
         visible = showConfirmPasswordDialogForBackup,
         subtitle = stringResource(R.string.backup_confirm_password),
-        onSuccess = {
+        onSuccess = { _ ->
             backupLauncher.launchAndIgnoreTimer(
                 createBackupFilename(),
                 activity = activity,
@@ -297,7 +297,7 @@ fun SettingsCallbacks(
     ConfirmPasswordDialog(
         visible = showConfirmPasswordDialogForReset,
         subtitle = stringResource(R.string.settings_advanced_reset_confirmation),
-        onSuccess = {
+        onSuccess = { _ ->
             viewModel.resetApp()
 
             showConfirmPasswordDialogForReset = false

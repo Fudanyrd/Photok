@@ -16,6 +16,9 @@
 
 package dev.leonlatsch.photok.encryption.domain
 
+import dev.leonlatsch.photok.backup.cloud.data.auth.CloudCredentialsSession
+import dev.leonlatsch.photok.backup.cloud.data.auth.CloudTokenStore
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsRepository
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtectionType
 import dev.leonlatsch.photok.gallery.albums.domain.AlbumRepository
 import dev.leonlatsch.photok.io.VaultCacheStorage
@@ -31,6 +34,9 @@ class ResetVaultUseCase @Inject constructor(
     private val config: Config,
     private val sessionRepository: SessionRepository,
     private val vaultCacheStorage: VaultCacheStorage,
+    private val cloudCredentialsRepository: CloudCredentialsRepository,
+    private val cloudCredentialsSession: CloudCredentialsSession,
+    private val cloudTokenStore: CloudTokenStore,
 ) {
     suspend operator fun invoke() {
         val allPhotos = photoRepository.findAllPhotosByImportDateDesc()
@@ -48,6 +54,10 @@ class ResetVaultUseCase @Inject constructor(
 
         config.legacyPasswordHash = null
         config.legacyUserSalt = null
+
+        cloudCredentialsRepository.clear()
+        cloudCredentialsSession.clear()
+        cloudTokenStore.clear()
 
         sessionRepository.reset()
     }

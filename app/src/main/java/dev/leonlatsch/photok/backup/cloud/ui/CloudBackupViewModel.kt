@@ -24,10 +24,12 @@ import dev.leonlatsch.photok.backup.cloud.domain.CLOUD_BACKUP_KEEP
 import dev.leonlatsch.photok.backup.cloud.domain.CloudAuth
 import dev.leonlatsch.photok.backup.cloud.domain.CloudBackupRepository
 import dev.leonlatsch.photok.backup.cloud.domain.CloudConnection
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsState
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
 import dev.leonlatsch.photok.backup.cloud.domain.CreateCloudBackupUseCase
-import dev.leonlatsch.photok.backup.cloud.domain.OAuthBrowser
+import dev.leonlatsch.photok.backup.cloud.domain.LoadCloudCredentialsUseCase
 import dev.leonlatsch.photok.backup.cloud.domain.RemoteBackup
+import dev.leonlatsch.photok.backup.cloud.domain.StoreCloudCredentialsUseCase
 import dev.leonlatsch.photok.backup.cloud.domain.cloudBackupFileName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -47,11 +49,13 @@ class CloudBackupViewModel @Inject constructor(
     private val auth: CloudAuth,
     private val repository: CloudBackupRepository,
     private val createBackup: CreateCloudBackupUseCase,
+    private val loadCredentials: LoadCloudCredentialsUseCase,
+    private val storeCredentials: StoreCloudCredentialsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         CloudBackupUiState(
-            configured = auth.configured,
+            credentials = auth.credentialsState.value,
             connection = auth.connection.value,
         )
     )
@@ -69,12 +73,35 @@ class CloudBackupViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            var wasUnlocked = _uiState.value.credentialsUnlocked
+
+            auth.credentialsState.collect { credentials ->
+                val isUnlocked = credentials is CloudCredentialsState.Unlocked
+                _uiState.update { it.copy(credentials = credentials) }
+
+                if (isUnlocked &&
+                    !wasUnlocked &&
+                    _uiState.value.pendingAction == null &&
+                    _uiState.value.credentialsDialog == null &&
+                    _uiState.value.isConnected
+                ) {
+                    refreshInternal()
+                }
+
+                wasUnlocked = isUnlocked
+            }
+        }
+
+        viewModelScope.launch {
             auth.connection.collect { connection ->
                 val wasConnected = _uiState.value.isConnected
                 _uiState.update { it.copy(connection = connection) }
 
-                if (connection is CloudConnection.Connected && !wasConnected) {
-                    refresh()
+                if (connection is CloudConnection.Connected &&
+                    !wasConnected &&
+                    _uiState.value.credentialsUnlocked
+                ) {
+                    refreshInternal()
                 }
 
                 if (connection is CloudConnection.Disconnected) {
@@ -93,31 +120,185 @@ class CloudBackupViewModel @Inject constructor(
             }
         }
 
-        if (auth.connection.value is CloudConnection.Connected) {
-            refresh()
+        if (auth.credentialsState.value is CloudCredentialsState.Unlocked &&
+            auth.connection.value is CloudConnection.Connected
+        ) {
+            refreshInternal()
         }
     }
 
     fun handleUiEvent(event: CloudBackupUiEvent) {
         when (event) {
-            is CloudBackupUiEvent.ConnectClicked -> connect(event.browser)
+            is CloudBackupUiEvent.ConnectClicked -> requestCredentials(
+                CloudPendingAction.Connect(event.browser)
+            ) {
+                auth.connect(event.browser)
+            }
+
+            is CloudBackupUiEvent.ImportCredentialsClicked -> showCredentialsDialog(
+                CloudCredentialsDialog.Import,
+                action = null,
+            )
+
+            is CloudBackupUiEvent.CredentialsPasswordEntered ->
+                unlockCredentials(event.password)
+
+            is CloudBackupUiEvent.CredentialsJsonSubmitted ->
+                importCredentials(event.json, event.password)
+
+            is CloudBackupUiEvent.CredentialsDialogDismissed -> _uiState.update {
+                it.copy(
+                    credentialsDialog = null,
+                    pendingAction = null,
+                    credentialsError = null,
+                    unlockingCredentials = false,
+                )
+            }
+
             is CloudBackupUiEvent.CancelConnectClicked -> auth.cancelConnect()
             is CloudBackupUiEvent.DisconnectClicked -> disconnect()
-            is CloudBackupUiEvent.RefreshClicked -> refresh()
-            is CloudBackupUiEvent.BackupClicked -> startBackup()
-            is CloudBackupUiEvent.RestoreClicked -> startRestore(event.backup)
-            is CloudBackupUiEvent.DeleteClicked -> startDelete(event.backup)
+            is CloudBackupUiEvent.RefreshClicked -> requestCredentials(CloudPendingAction.Refresh) {
+                refreshInternal()
+            }
+
+            is CloudBackupUiEvent.BackupClicked -> requestCredentials(CloudPendingAction.Backup) {
+                performBackup()
+            }
+
+            is CloudBackupUiEvent.RestoreClicked -> requestCredentials(
+                CloudPendingAction.Restore(event.backup)
+            ) {
+                performRestore(event.backup)
+            }
+
+            is CloudBackupUiEvent.DeleteClicked -> requestCredentials(
+                CloudPendingAction.Delete(event.backup)
+            ) {
+                performDelete(event.backup)
+            }
+
             is CloudBackupUiEvent.CancelClicked -> cancel()
             is CloudBackupUiEvent.ErrorDismissed -> _uiState.update { it.copy(error = null) }
             is CloudBackupUiEvent.MessageDismissed -> _uiState.update { it.copy(message = null) }
         }
     }
 
-    private fun connect(browser: OAuthBrowser) {
+    private fun requestCredentials(
+        action: CloudPendingAction,
+        block: () -> Unit,
+    ) {
         if (!_uiState.value.canInteract) return
 
-        _uiState.update { it.copy(error = null, message = null) }
-        auth.connect(browser)
+        if (_uiState.value.credentialsUnlocked) {
+            block()
+            return
+        }
+
+        val dialog = when (_uiState.value.credentials) {
+            CloudCredentialsState.Missing -> CloudCredentialsDialog.Import
+            CloudCredentialsState.Locked, CloudCredentialsState.Unlocked ->
+                CloudCredentialsDialog.Unlock
+        }
+
+        showCredentialsDialog(dialog, action)
+    }
+
+    private fun showCredentialsDialog(
+        dialog: CloudCredentialsDialog,
+        action: CloudPendingAction?,
+    ) {
+        if (!_uiState.value.canInteract) return
+
+        _uiState.update {
+            it.copy(
+                credentialsDialog = dialog,
+                pendingAction = action,
+                credentialsError = null,
+            )
+        }
+    }
+
+    private fun unlockCredentials(password: String) {
+        if (_uiState.value.credentialsDialog != CloudCredentialsDialog.Unlock) return
+        if (password.isEmpty() || _uiState.value.unlockingCredentials) return
+
+        _uiState.update { it.copy(unlockingCredentials = true, credentialsError = null) }
+
+        viewModelScope.launch {
+            loadCredentials(password).fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            unlockingCredentials = false,
+                            credentialsDialog = null,
+                            credentialsError = null,
+                        )
+                    }
+                    continuePendingAction()
+                },
+                onFailure = { error ->
+                    val cloudError = error.asCloudError()
+                    _uiState.update {
+                        it.copy(
+                            unlockingCredentials = false,
+                            credentialsError = cloudError,
+                            credentialsDialog = if (
+                                cloudError is CloudError.CredentialsCorrupt ||
+                                cloudError is CloudError.CredentialsMissing
+                            ) {
+                                CloudCredentialsDialog.Import
+                            } else {
+                                it.credentialsDialog
+                            },
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    private fun importCredentials(json: String, password: String) {
+        if (_uiState.value.credentialsDialog != CloudCredentialsDialog.Import) return
+        if (json.isBlank() || password.isEmpty() || _uiState.value.unlockingCredentials) return
+
+        _uiState.update { it.copy(unlockingCredentials = true, credentialsError = null) }
+
+        viewModelScope.launch {
+            storeCredentials(json, password).fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            unlockingCredentials = false,
+                            credentialsDialog = null,
+                            credentialsError = null,
+                        )
+                    }
+                    continuePendingAction()
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            unlockingCredentials = false,
+                            credentialsError = error.asCloudError(),
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    private fun continuePendingAction() {
+        val action = _uiState.value.pendingAction
+        _uiState.update { it.copy(pendingAction = null) }
+
+        when (action) {
+            is CloudPendingAction.Connect -> auth.connect(action.browser)
+            is CloudPendingAction.Refresh -> refreshInternal()
+            is CloudPendingAction.Backup -> performBackup()
+            is CloudPendingAction.Restore -> performRestore(action.backup)
+            is CloudPendingAction.Delete -> performDelete(action.backup)
+            null -> if (_uiState.value.isConnected) refreshInternal()
+        }
     }
 
     private fun disconnect() {
@@ -137,12 +318,16 @@ class CloudBackupViewModel @Inject constructor(
                     error = null,
                     message = null,
                     canceling = false,
+                    credentialsDialog = null,
+                    pendingAction = null,
+                    credentialsError = null,
+                    unlockingCredentials = false,
                 )
             }
         }
     }
 
-    private fun refresh() {
+    private fun refreshInternal() {
         if (_uiState.value.connection !is CloudConnection.Connected) return
 
         refreshJob?.cancel()
@@ -162,7 +347,7 @@ class CloudBackupViewModel @Inject constructor(
         }
     }
 
-    private fun startBackup() {
+    private fun performBackup() {
         if (!_uiState.value.canInteract) return
         if (_uiState.value.connection !is CloudConnection.Connected) return
 
@@ -222,7 +407,7 @@ class CloudBackupViewModel @Inject constructor(
         }
     }
 
-    private fun startRestore(backup: RemoteBackup) {
+    private fun performRestore(backup: RemoteBackup) {
         if (!_uiState.value.canInteract) return
         if (_uiState.value.connection !is CloudConnection.Connected) return
 
@@ -266,7 +451,7 @@ class CloudBackupViewModel @Inject constructor(
         }
     }
 
-    private fun startDelete(backup: RemoteBackup) {
+    private fun performDelete(backup: RemoteBackup) {
         if (!_uiState.value.canInteract) return
         if (_uiState.value.connection !is CloudConnection.Connected) return
 
@@ -325,18 +510,43 @@ class CloudBackupViewModel @Inject constructor(
 
         Timber.e(error, "Cloud backup operation failed")
 
-        _uiState.update {
-            it.copy(
-                busy = null,
-                loadingBackups = false,
-                error = error.asCloudError(),
-            )
+        val cloudError = error.asCloudError()
+
+        when (cloudError) {
+            is CloudError.CredentialsMissing -> _uiState.update {
+                it.copy(
+                    busy = null,
+                    loadingBackups = false,
+                    error = null,
+                    credentialsDialog = CloudCredentialsDialog.Import,
+                    pendingAction = null,
+                )
+            }
+
+            is CloudError.CredentialsLocked -> _uiState.update {
+                it.copy(
+                    busy = null,
+                    loadingBackups = false,
+                    error = null,
+                    credentialsDialog = CloudCredentialsDialog.Unlock,
+                    pendingAction = null,
+                )
+            }
+
+            else -> _uiState.update {
+                it.copy(
+                    busy = null,
+                    loadingBackups = false,
+                    error = cloudError,
+                )
+            }
         }
 
         // A revoked or insufficient grant needs a fresh consent, not a retry with the
-        // same token. Clearing the session also brings the Connect button back.
-        if (error is CloudError.AuthorizationFailed) {
-            auth.disconnect()
+        // same token. Keep the decrypted credentials so reconnecting does not ask for the
+        // vault password again.
+        if (cloudError is CloudError.AuthorizationFailed) {
+            auth.forgetOAuthSession()
         }
     }
 

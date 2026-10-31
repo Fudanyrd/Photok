@@ -18,7 +18,9 @@ package dev.leonlatsch.photok.backup.cloud.ui
 
 import android.net.Uri
 import dev.leonlatsch.photok.backup.cloud.domain.CloudConnection
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsState
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
+import dev.leonlatsch.photok.backup.cloud.domain.OAuthBrowser
 import dev.leonlatsch.photok.backup.cloud.domain.RemoteBackup
 import dev.leonlatsch.photok.backup.cloud.domain.newestFirst
 import kotlinx.serialization.Serializable
@@ -29,8 +31,26 @@ enum class CloudBackupMode {
     Restore,
 }
 
+enum class CloudCredentialsDialog {
+    Import,
+    Unlock,
+}
+
+sealed interface CloudPendingAction {
+
+    data class Connect(val browser: OAuthBrowser) : CloudPendingAction
+
+    data object Refresh : CloudPendingAction
+
+    data object Backup : CloudPendingAction
+
+    data class Restore(val backup: RemoteBackup) : CloudPendingAction
+
+    data class Delete(val backup: RemoteBackup) : CloudPendingAction
+}
+
 data class CloudBackupUiState(
-    val configured: Boolean = true,
+    val credentials: CloudCredentialsState = CloudCredentialsState.Missing,
     val connection: CloudConnection = CloudConnection.Disconnected,
     val backups: List<RemoteBackup> = emptyList(),
     val loadingBackups: Boolean = false,
@@ -38,12 +58,22 @@ data class CloudBackupUiState(
     val canceling: Boolean = false,
     val error: CloudError? = null,
     val message: CloudMessage? = null,
+    val credentialsDialog: CloudCredentialsDialog? = null,
+    val pendingAction: CloudPendingAction? = null,
+    val credentialsError: CloudError? = null,
+    val unlockingCredentials: Boolean = false,
 ) {
     val isConnected: Boolean
         get() = connection is CloudConnection.Connected
 
     val isConnecting: Boolean
         get() = connection is CloudConnection.Connecting
+
+    val hasCredentials: Boolean
+        get() = credentials !is CloudCredentialsState.Missing
+
+    val credentialsUnlocked: Boolean
+        get() = credentials is CloudCredentialsState.Unlocked
 
     val accountEmail: String?
         get() = (connection as? CloudConnection.Connected)?.email
@@ -52,7 +82,7 @@ data class CloudBackupUiState(
         get() = backups.newestFirst().firstOrNull()
 
     val canInteract: Boolean
-        get() = busy == null && !canceling
+        get() = busy == null && !canceling && !unlockingCredentials
 }
 
 sealed interface CloudBusy {

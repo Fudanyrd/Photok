@@ -26,10 +26,12 @@ import dev.leonlatsch.photok.backup.cloud.data.auth.GoogleCloudAuth
 import dev.leonlatsch.photok.backup.cloud.data.auth.KeystoreCloudTokenStore
 import dev.leonlatsch.photok.backup.cloud.data.auth.KeystoreTokenCipher
 import dev.leonlatsch.photok.backup.cloud.data.auth.TokenCipher
+import dev.leonlatsch.photok.backup.cloud.data.credentials.FileCloudCredentialsRepository
 import dev.leonlatsch.photok.backup.cloud.data.drive.GoogleDriveRepository
 import dev.leonlatsch.photok.backup.cloud.domain.CloudAuth
 import dev.leonlatsch.photok.backup.cloud.domain.CloudBackupRepository
-import dev.leonlatsch.photok.backup.cloud.data.CloudConfig
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsRepository
+import dev.leonlatsch.photok.backup.cloud.data.CloudOAuthConfig
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -54,11 +56,17 @@ abstract class CloudModule {
     @Singleton
     abstract fun bindCloudBackupRepository(impl: GoogleDriveRepository): CloudBackupRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindCloudCredentialsRepository(
+        impl: FileCloudCredentialsRepository,
+    ): CloudCredentialsRepository
+
     companion object {
 
         @Provides
         @Singleton
-        fun provideCloudConfig() = CloudConfig()
+        fun provideCloudOAuthConfig() = CloudOAuthConfig()
 
         @Provides
         @Singleton

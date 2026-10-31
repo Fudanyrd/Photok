@@ -234,6 +234,7 @@
     <string name="change_password_confirm_new_password">Confirma tu nueva contraseña</string>
     <string name="change_password_button">Cambiar contraseña</string>
     <string name="change_password_done">Tu contraseña ha sido cambiada</string>
+    <string name="change_password_done_credentials_cleared">Contraseña cambiada. Se borraron las credenciales de Drive; pega google.json de nuevo.</string> <!-- TODO: machine translated | EN: Password changed. Drive credentials were cleared; paste google.json again. -->
     <string name="change_password_recovery_phrase_used">Se usó la frase de recuperación — no es necesario verificar la contraseña anterior</string>
 
     <!-- HIDE APP -->
@@ -497,8 +498,14 @@
     <string name="cloud_backup_disconnect">Desconectar</string> <!-- TODO: machine translated | EN: Disconnect -->
     <string name="cloud_backup_connecting">Esperando a Google…</string> <!-- TODO: machine translated | EN: Waiting for Google… -->
     <string name="cloud_backup_not_connected">No conectado</string> <!-- TODO: machine translated | EN: Not connected -->
-    <string name="cloud_backup_not_configured">No configurado</string> <!-- TODO: machine translated | EN: Not configured -->
-    <string name="cloud_backup_not_configured_help">Google Drive no está configurado en esta compilación. Añade credenciales OAuth al compilar para activar la copia de seguridad en la nube.</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. Add OAuth credentials when building to enable cloud backup. -->
+    <string name="cloud_backup_not_configured">Credenciales de Drive no configuradas</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
+    <string name="cloud_backup_not_configured_help">Pega el archivo google.json de tu cliente OAuth de Google Cloud para activar la copia de seguridad en la nube.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
+    <string name="cloud_backup_credentials_import">Importar google.json</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_credentials_json">JSON del cliente OAuth</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
+    <string name="cloud_backup_credentials_locked">Credenciales bloqueadas</string> <!-- TODO: machine translated | EN: Credentials locked -->
+    <string name="cloud_backup_credentials_unlock_title">Desbloquear Google Drive</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->
+    <string name="cloud_backup_credentials_unlock_message">Introduce la contraseña de tu baúl para desbloquear las credenciales de Drive guardadas.</string> <!-- TODO: machine translated | EN: Enter your vault password to unlock the stored Drive credentials. -->
+    <string name="cloud_backup_credentials_unlock">Desbloquear</string> <!-- TODO: machine translated | EN: Unlock -->
     <string name="cloud_backup_refresh">Actualizar</string> <!-- TODO: machine translated | EN: Refresh -->
     <string name="cloud_backup_section_title">Copias de seguridad en Drive</string> <!-- TODO: machine translated | EN: Backups in Drive -->
     <string name="cloud_backup_empty">Aún no hay copias de seguridad en Drive.</string> <!-- TODO: machine translated | EN: No backups in Drive yet. -->
@@ -524,7 +531,11 @@
     <string name="cloud_backup_uploaded_with_failures">Copia de seguridad subida a Google Drive, pero %1$d fotos no se pudieron añadir.</string> <!-- TODO: machine translated | EN: Backup uploaded to Google Drive, but %1$d photos could not be added. -->
     <string name="cloud_backup_deleted">Se ha eliminado %1$s de Google Drive.</string> <!-- TODO: machine translated | EN: Deleted %1$s from Google Drive. -->
     <string name="cloud_backup_dismiss">Cerrar</string> <!-- TODO: machine translated | EN: Dismiss -->
-    <string name="cloud_backup_error_not_configured">Google Drive no está configurado en esta compilación.</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. -->
+    <string name="cloud_backup_error_not_configured">Las credenciales de Google Drive no están configuradas.</string> <!-- TODO: machine translated | EN: Google Drive credentials are not set up. -->
+    <string name="cloud_backup_error_credentials_locked">Las credenciales de Google Drive están bloqueadas. Introduce la contraseña de tu baúl.</string> <!-- TODO: machine translated | EN: Google Drive credentials are locked. Enter your vault password. -->
+    <string name="cloud_backup_error_credentials_invalid">Ese JSON no es un cliente OAuth de Google válido. Pega el google.json de un cliente de aplicación de escritorio.</string> <!-- TODO: machine translated | EN: That JSON is not a valid Google OAuth client. Paste the google.json from a Desktop app client. -->
+    <string name="cloud_backup_error_credentials_corrupt">No se pudieron leer las credenciales de Drive guardadas. Pega google.json de nuevo.</string> <!-- TODO: machine translated | EN: The stored Drive credentials could not be read. Paste google.json again. -->
+    <string name="cloud_backup_error_wrong_password">Contraseña del baúl incorrecta.</string> <!-- TODO: machine translated | EN: Wrong vault password. -->
     <string name="cloud_backup_error_not_connected">Conéctate primero a Google Drive.</string> <!-- TODO: machine translated | EN: Connect to Google Drive first. -->
     <string name="cloud_backup_error_auth">Error de autorización de Google Drive. Vuelve a conectarte.</string> <!-- TODO: machine translated | EN: Google Drive authorization failed. Please connect again. -->
     <string name="cloud_backup_error_quota">Tu almacenamiento de Google Drive está lleno.</string> <!-- TODO: machine translated | EN: Your Google Drive storage is full. -->

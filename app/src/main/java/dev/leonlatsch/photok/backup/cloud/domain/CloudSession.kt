@@ -28,6 +28,7 @@ data class CloudSession(
     val expiresAt: Long,
     val email: String?,
     val folderId: String? = null,
+    val clientId: String? = null,
 ) {
     fun isAccessTokenUsable(now: Long = System.currentTimeMillis()): Boolean =
         accessToken.isNotBlank() && expiresAt > now + TOKEN_EXPIRY_MARGIN_MILLIS

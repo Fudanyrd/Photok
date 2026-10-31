@@ -46,8 +46,6 @@ fun buildCredential(vararg keys: String): String? {
     return null
 }
 
-val driveClientId = buildCredential("DRIVE_CLIENT_ID", "GOOGLE_ID").orEmpty()
-val driveClientSecret = buildCredential("DRIVE_CLIENT_SECRET", "GOOGLE_API_KEY").orEmpty()
 val driveRedirectHost = buildCredential("DRIVE_REDIRECT_HOST") ?: "localhost"
 
 apply(plugin = "com.android.legacy-kapt")
@@ -66,8 +64,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "DRIVE_CLIENT_ID", "\"$driveClientId\"")
-        buildConfigField("String", "DRIVE_CLIENT_SECRET", "\"$driveClientSecret\"")
         buildConfigField("String", "DRIVE_REDIRECT_HOST", "\"$driveRedirectHost\"")
 
         base {

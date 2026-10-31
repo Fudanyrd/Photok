@@ -23,6 +23,17 @@ sealed interface CloudBackupUiEvent {
 
     data class ConnectClicked(val browser: OAuthBrowser) : CloudBackupUiEvent
 
+    data object ImportCredentialsClicked : CloudBackupUiEvent
+
+    data class CredentialsPasswordEntered(val password: String) : CloudBackupUiEvent
+
+    data class CredentialsJsonSubmitted(
+        val json: String,
+        val password: String,
+    ) : CloudBackupUiEvent
+
+    data object CredentialsDialogDismissed : CloudBackupUiEvent
+
     data object CancelConnectClicked : CloudBackupUiEvent
 
     data object DisconnectClicked : CloudBackupUiEvent

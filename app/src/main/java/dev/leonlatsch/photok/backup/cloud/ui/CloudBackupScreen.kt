@@ -52,7 +52,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,10 +66,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.leonlatsch.photok.R
 import dev.leonlatsch.photok.backup.cloud.domain.CLOUD_BACKUP_KEEP
 import dev.leonlatsch.photok.backup.cloud.domain.CloudConnection
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsState
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
 import dev.leonlatsch.photok.backup.cloud.domain.OAuthBrowser
 import dev.leonlatsch.photok.backup.cloud.domain.RemoteBackup
-import dev.leonlatsch.photok.backup.ui.ConfirmPasswordDialog
 import dev.leonlatsch.photok.main.ui.navigation.AppRoute
 import dev.leonlatsch.photok.navigation.LocalNavigator
 import dev.leonlatsch.photok.ui.ObserveAsEvents
@@ -127,7 +126,6 @@ private fun CloudBackupContent(
     onBack: () -> Unit,
     onEvent: (CloudBackupUiEvent) -> Unit,
 ) {
-    var showConfirmPassword by rememberSaveable { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<RemoteBackup?>(null) }
 
     Scaffold(
@@ -206,8 +204,12 @@ private fun CloudBackupContent(
                 )
             }
 
-            if (!state.configured) {
-                item { NotConfiguredCard() }
+            if (state.credentials is CloudCredentialsState.Missing) {
+                item {
+                    CredentialsMissingCard(
+                        onImport = { onEvent(CloudBackupUiEvent.ImportCredentialsClicked) },
+                    )
+                }
             }
 
             state.busy?.let { busy ->
@@ -225,7 +227,7 @@ private fun CloudBackupContent(
                     item {
                         BackupCard(
                             state = state,
-                            onBackup = { showConfirmPassword = true },
+                            onBackup = { onEvent(CloudBackupUiEvent.BackupClicked) },
                         )
                     }
                 }
@@ -266,15 +268,20 @@ private fun CloudBackupContent(
         }
     }
 
-    ConfirmPasswordDialog(
-        visible = showConfirmPassword,
-        subtitle = stringResource(R.string.cloud_backup_confirm_password),
-        onSuccess = {
-            showConfirmPassword = false
-            onEvent(CloudBackupUiEvent.BackupClicked)
-        },
-        onDismissRequest = { showConfirmPassword = false },
-    )
+    state.credentialsDialog?.let { dialog ->
+        DriveCredentialsDialog(
+            mode = dialog,
+            error = state.credentialsError,
+            loading = state.unlockingCredentials,
+            onDismissRequest = { onEvent(CloudBackupUiEvent.CredentialsDialogDismissed) },
+            onUnlock = { password ->
+                onEvent(CloudBackupUiEvent.CredentialsPasswordEntered(password))
+            },
+            onImport = { json, password ->
+                onEvent(CloudBackupUiEvent.CredentialsJsonSubmitted(json, password))
+            },
+        )
+    }
 
     deleteTarget?.let { backup ->
         AlertDialog(
@@ -312,8 +319,10 @@ private fun ConnectionCard(
         } ?: stringResource(R.string.cloud_backup_connected)
 
         state.isConnecting -> stringResource(R.string.cloud_backup_connecting)
-        state.configured -> stringResource(R.string.cloud_backup_not_connected)
-        else -> stringResource(R.string.cloud_backup_not_configured)
+        state.credentials is CloudCredentialsState.Missing ->
+            stringResource(R.string.cloud_backup_not_configured)
+        state.credentialsUnlocked -> stringResource(R.string.cloud_backup_not_connected)
+        else -> stringResource(R.string.cloud_backup_credentials_locked)
     }
 
     Card {
@@ -366,7 +375,9 @@ private fun ConnectionCard(
                     Text(stringResource(R.string.cloud_backup_cancel))
                 }
 
-                state.configured -> Button(
+                state.credentials is CloudCredentialsState.Missing -> Unit
+
+                else -> Button(
                     onClick = {
                         browser?.let { onEvent(CloudBackupUiEvent.ConnectClicked(it)) }
                     },
@@ -380,16 +391,23 @@ private fun ConnectionCard(
 }
 
 @Composable
-private fun NotConfiguredCard() {
+private fun CredentialsMissingCard(onImport: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Text(
-            text = stringResource(R.string.cloud_backup_not_configured_help),
-            style = MaterialTheme.typography.bodySmall,
+        Column(
             modifier = Modifier.padding(12.dp),
-        )
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.cloud_backup_not_configured_help),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton(onClick = onImport) {
+                Text(stringResource(R.string.cloud_backup_credentials_import))
+            }
+        }
     }
 }
 
@@ -691,7 +709,17 @@ private fun MessageCard(
 
 @Composable
 private fun errorText(error: CloudError): String = when (error) {
-    is CloudError.NotConfigured -> stringResource(R.string.cloud_backup_error_not_configured)
+    is CloudError.NotConfigured,
+    is CloudError.CredentialsMissing -> stringResource(R.string.cloud_backup_error_not_configured)
+
+    is CloudError.CredentialsLocked -> stringResource(R.string.cloud_backup_error_credentials_locked)
+    is CloudError.InvalidCredentialsJson ->
+        stringResource(R.string.cloud_backup_error_credentials_invalid)
+
+    is CloudError.CredentialsCorrupt ->
+        stringResource(R.string.cloud_backup_error_credentials_corrupt)
+
+    is CloudError.WrongPassword -> stringResource(R.string.cloud_backup_error_wrong_password)
     is CloudError.NotConnected -> stringResource(R.string.cloud_backup_error_not_connected)
     is CloudError.AuthorizationFailed -> stringResource(R.string.cloud_backup_error_auth)
     is CloudError.QuotaExceeded -> stringResource(R.string.cloud_backup_error_quota)
@@ -721,6 +749,7 @@ private fun PreviewConnected() {
     AppTheme {
         CloudBackupContent(
             state = CloudBackupUiState(
+                credentials = CloudCredentialsState.Unlocked,
                 connection = CloudConnection.Connected("me@example.com"),
                 backups = listOf(
                     RemoteBackup(
@@ -744,7 +773,7 @@ private fun PreviewConnected() {
 private fun PreviewDisconnected() {
     AppTheme {
         CloudBackupContent(
-            state = CloudBackupUiState(configured = false),
+            state = CloudBackupUiState(credentials = CloudCredentialsState.Missing),
             mode = CloudBackupMode.Restore,
             browser = null,
             onBack = {},

@@ -45,6 +45,7 @@ data class ChangePasswordUiState(
     val newPasswordConfirm: String = "",
     val showConfirmChangeDialog: Boolean = false,
     val done: Boolean = false,
+    val credentialsCleared: Boolean = false,
 ) {
     enum class Step {
         CheckOld,
@@ -125,9 +126,23 @@ class ChangePasswordViewModel @Inject constructor(
 
         _uiState.update { it.copy(loading = true) }
         viewModelScope.launch(Dispatchers.IO) {
-            changePasswordUseCase(state.newPassword)
-                .onSuccess { _uiState.update { it.copy(done = true, loading = false) } }
-                .onFailure { Timber.e(it) }
+            changePasswordUseCase(
+                oldPassword = state.oldPassword.takeIf { it.isNotEmpty() },
+                newPassword = state.newPassword,
+            )
+                .onSuccess { result ->
+                    _uiState.update {
+                        it.copy(
+                            done = true,
+                            loading = false,
+                            credentialsCleared = result.credentialsCleared,
+                        )
+                    }
+                }
+                .onFailure {
+                    Timber.e(it)
+                    _uiState.update { state -> state.copy(loading = false) }
+                }
         }
     }
 }

@@ -16,6 +16,9 @@
 
 package dev.leonlatsch.photok.encryption.integration
 
+import dev.leonlatsch.photok.backup.cloud.data.auth.CloudCredentialsSession
+import dev.leonlatsch.photok.backup.cloud.data.auth.CloudTokenStore
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsRepository
 import dev.leonlatsch.photok.encryption.domain.ChangePasswordUseCase
 import dev.leonlatsch.photok.encryption.domain.SessionRepository
 import dev.leonlatsch.photok.encryption.domain.VaultProtectionRepository
@@ -28,6 +31,7 @@ import dev.leonlatsch.photok.encryption.domain.models.VaultProtection
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtectionType
 import dev.leonlatsch.photok.encryption.domain.models.VaultSession
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -57,11 +61,17 @@ class VaultLifecycleTest {
 
     private val mockProtectionRepository = mockk<VaultProtectionRepository>()
     private val mockSessionRepository = mockk<SessionRepository>()
+    private val mockCloudCredentialsRepository = mockk<CloudCredentialsRepository>(relaxed = true)
+    private val mockCloudCredentialsSession = mockk<CloudCredentialsSession>(relaxed = true)
+    private val mockCloudTokenStore = mockk<CloudTokenStore>(relaxed = true)
     private val changePasswordUseCase = ChangePasswordUseCase(
         vaultProtectionRepository = mockProtectionRepository,
         sessionRepository = mockSessionRepository,
         keyGen = keyGen,
         config = mockConfig,
+        cloudCredentialsRepository = mockCloudCredentialsRepository,
+        cloudCredentialsSession = mockCloudCredentialsSession,
+        cloudTokenStore = mockCloudTokenStore,
     )
 
     private val password = "correct-horse-battery-staple"
@@ -120,7 +130,7 @@ class VaultLifecycleTest {
         coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
         coEvery { mockProtectionRepository.updateProtection(capture(capturedProtection)) } returns Unit
 
-        changePasswordUseCase(newPassword)
+        changePasswordUseCase(oldPassword = password, newPassword = newPassword)
 
         val newProtection = capturedProtection.captured
 
@@ -188,5 +198,56 @@ class VaultLifecycleTest {
             "Each 1.x.x migration must generate a unique random VMK",
             vmk1.encoded.contentEquals(vmk2.encoded),
         )
+    }
+
+    @Test
+    fun `change password reencrypts the stored drive credentials`() = runTest {
+        val newPassword = "brand-new-password"
+        val initialProtection = handler.create(CreateRequest.Password(password))
+        val initialVmk = handler.unlock(UnlockRequest.Password(password), initialProtection)
+
+        every { mockCloudCredentialsRepository.exists() } returns true
+        coEvery {
+            mockCloudCredentialsRepository.reencrypt(password, newPassword)
+        } returns Result.success(Unit)
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns initialProtection
+        coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
+        coEvery { mockProtectionRepository.updateProtection(any()) } returns Unit
+
+        val result = changePasswordUseCase(
+            oldPassword = password,
+            newPassword = newPassword,
+        ).getOrThrow()
+
+        assertFalse(result.credentialsCleared)
+        coVerify(exactly = 1) {
+            mockCloudCredentialsRepository.reencrypt(password, newPassword)
+        }
+        coVerify(exactly = 0) { mockCloudTokenStore.clear() }
+    }
+
+    @Test
+    fun `failed credential reencryption clears drive credentials and tokens`() = runTest {
+        val newPassword = "brand-new-password"
+        val initialProtection = handler.create(CreateRequest.Password(password))
+        val initialVmk = handler.unlock(UnlockRequest.Password(password), initialProtection)
+
+        every { mockCloudCredentialsRepository.exists() } returns true
+        coEvery {
+            mockCloudCredentialsRepository.reencrypt(password, newPassword)
+        } returns Result.failure(IllegalStateException("corrupt"))
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns initialProtection
+        coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
+        coEvery { mockProtectionRepository.updateProtection(any()) } returns Unit
+
+        val result = changePasswordUseCase(
+            oldPassword = password,
+            newPassword = newPassword,
+        ).getOrThrow()
+
+        assertTrue(result.credentialsCleared)
+        coVerify(exactly = 1) { mockCloudCredentialsRepository.clear() }
+        coVerify(exactly = 1) { mockCloudTokenStore.clear() }
+        coVerify(exactly = 1) { mockCloudCredentialsSession.clear() }
     }
 }

@@ -43,6 +43,7 @@ class KeystoreCloudTokenStore @Inject constructor(
     private val config: Config,
     private val tokenCipher: TokenCipher,
     private val gson: Gson,
+    private val credentialsSession: CloudCredentialsSession,
 ) : CloudTokenStore {
 
     private val lock = Any()
@@ -72,7 +73,20 @@ class KeystoreCloudTokenStore @Inject constructor(
 
         return try {
             val plain = tokenCipher.decrypt(Base64.getDecoder().decode(stored))
-            gson.fromJson(String(plain, Charsets.UTF_8), CloudSession::class.java)
+            val session = gson.fromJson(String(plain, Charsets.UTF_8), CloudSession::class.java)
+            val currentClientId = credentialsSession.credentials?.clientId
+
+            if (session != null &&
+                session.clientId != null &&
+                currentClientId != null &&
+                session.clientId != currentClientId
+            ) {
+                Timber.w("The cloud session belongs to a different OAuth client, clearing it")
+                config.putString(KEY_SESSION, null)
+                null
+            } else {
+                session
+            }
         } catch (e: Exception) {
             // A key can be invalidated by a lock screen change. An old session is useless then.
             Timber.e(e, "Could not read the cloud session, clearing it")

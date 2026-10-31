@@ -28,7 +28,7 @@ fun interface OAuthBrowser {
 
 interface CloudAuth {
 
-    val configured: Boolean
+    val credentialsState: StateFlow<CloudCredentialsState>
 
     val connection: StateFlow<CloudConnection>
 
@@ -49,6 +49,12 @@ interface CloudAuth {
     fun cancelConnect()
 
     fun clearLastError()
+
+    /**
+     * Clears the OAuth token session and connection state but keeps the decrypted client
+     * credentials for the current vault session.
+     */
+    suspend fun forgetOAuthSession()
 
     suspend fun disconnect()
 

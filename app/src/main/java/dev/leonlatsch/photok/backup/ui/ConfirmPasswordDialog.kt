@@ -41,7 +41,7 @@ import dev.leonlatsch.photok.ui.theme.AppTheme
 fun ConfirmPasswordDialog(
     visible: Boolean,
     subtitle: String? = null,
-    onSuccess: () -> Unit,
+    onSuccess: (password: String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     if (visible) {
@@ -51,7 +51,7 @@ fun ConfirmPasswordDialog(
 
             LaunchedEffect(uiState.success) {
                 if (uiState.success) {
-                    onSuccess()
+                    onSuccess(uiState.password)
                     onDismissRequest()
                 }
             }

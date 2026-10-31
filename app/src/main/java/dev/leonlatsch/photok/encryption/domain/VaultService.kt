@@ -92,6 +92,14 @@ class VaultService @Inject constructor(
         }
     }
 
+    suspend fun verifyPassword(password: String): Result<Unit> = runCatching {
+        val protection = requireNotNull(
+            vaultProtectionRepository.getProtection(VaultProtectionType.Password)
+        ) { "No password protection is configured" }
+
+        passwordProtectionHandler.unlock(UnlockRequest.Password(password), protection)
+    }
+
     suspend fun isSetup(type: VaultProtectionType): Boolean {
         return vaultProtectionRepository.getProtection(type) != null
     }

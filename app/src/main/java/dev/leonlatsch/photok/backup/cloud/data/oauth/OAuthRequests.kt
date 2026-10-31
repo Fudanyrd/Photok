@@ -18,7 +18,7 @@ package dev.leonlatsch.photok.backup.cloud.data.oauth
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import dev.leonlatsch.photok.backup.cloud.data.CloudConfig
+import dev.leonlatsch.photok.backup.cloud.domain.DriveClientCredentials
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.RequestBody
@@ -33,12 +33,12 @@ object GoogleOAuth {
     const val SCOPE = "$DRIVE_FILE_SCOPE openid email"
 
     fun authorizationUrl(
-        config: CloudConfig,
+        credentials: DriveClientCredentials,
         redirectUri: String,
         codeChallenge: String,
         state: String,
     ) = AUTHORIZATION_ENDPOINT.toHttpUrl().newBuilder()
-        .addQueryParameter("client_id", config.clientId)
+        .addQueryParameter("client_id", credentials.clientId)
         .addQueryParameter("redirect_uri", redirectUri)
         .addQueryParameter("response_type", "code")
         .addQueryParameter("scope", SCOPE)
@@ -52,26 +52,28 @@ object GoogleOAuth {
         .build()
 
     fun tokenRequestBody(
-        config: CloudConfig,
+        credentials: DriveClientCredentials,
         code: String,
         redirectUri: String,
         codeVerifier: String,
     ): RequestBody = FormBody.Builder()
         .add("code", code)
-        .add("client_id", config.clientId)
-        .add("client_secret", config.clientSecret)
+        .add("client_id", credentials.clientId)
+        .add("client_secret", credentials.clientSecret)
         .add("redirect_uri", redirectUri)
         .add("grant_type", "authorization_code")
         .add("code_verifier", codeVerifier)
         .build()
 
-    fun refreshRequestBody(config: CloudConfig, refreshToken: String): RequestBody =
-        FormBody.Builder()
-            .add("client_id", config.clientId)
-            .add("client_secret", config.clientSecret)
-            .add("refresh_token", refreshToken)
-            .add("grant_type", "refresh_token")
-            .build()
+    fun refreshRequestBody(
+        credentials: DriveClientCredentials,
+        refreshToken: String,
+    ): RequestBody = FormBody.Builder()
+        .add("client_id", credentials.clientId)
+        .add("client_secret", credentials.clientSecret)
+        .add("refresh_token", refreshToken)
+        .add("grant_type", "refresh_token")
+        .build()
 }
 
 data class OAuthRedirect(

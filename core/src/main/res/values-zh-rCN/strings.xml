@@ -231,6 +231,7 @@
     <string name="change_password_confirm_new_password">确认你的新密码</string>
     <string name="change_password_button">更改密码</string>
     <string name="change_password_done">已更改密码</string>
+    <string name="change_password_done_credentials_cleared">密码已更改。Drive 凭据已清除；请重新粘贴 google.json。</string> <!-- TODO: machine translated | EN: Password changed. Drive credentials were cleared; paste google.json again. -->
     <string name="change_password_recovery_phrase_used">使用了恢复短语 — 无需检查旧密码</string>
 
     <!-- HIDE APP -->
@@ -497,8 +498,14 @@
     <string name="cloud_backup_disconnect">断开连接</string> <!-- TODO: machine translated | EN: Disconnect -->
     <string name="cloud_backup_connecting">正在等待 Google…</string> <!-- TODO: machine translated | EN: Waiting for Google… -->
     <string name="cloud_backup_not_connected">未连接</string> <!-- TODO: machine translated | EN: Not connected -->
-    <string name="cloud_backup_not_configured">未配置</string> <!-- TODO: machine translated | EN: Not configured -->
-    <string name="cloud_backup_not_configured_help">此版本未配置 Google Drive。构建时添加 OAuth 凭据以启用云备份。</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. Add OAuth credentials when building to enable cloud backup. -->
+    <string name="cloud_backup_not_configured">Drive 凭据未设置</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
+    <string name="cloud_backup_not_configured_help">粘贴 Google Cloud OAuth 客户端中的 google.json 文件以启用云备份。</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
+    <string name="cloud_backup_credentials_import">导入 google.json</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_credentials_json">OAuth 客户端 JSON</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
+    <string name="cloud_backup_credentials_locked">凭据已锁定</string> <!-- TODO: machine translated | EN: Credentials locked -->
+    <string name="cloud_backup_credentials_unlock_title">解锁 Google Drive</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->
+    <string name="cloud_backup_credentials_unlock_message">输入保险库密码以解锁已保存的 Drive 凭据。</string> <!-- TODO: machine translated | EN: Enter your vault password to unlock the stored Drive credentials. -->
+    <string name="cloud_backup_credentials_unlock">解锁</string> <!-- TODO: machine translated | EN: Unlock -->
     <string name="cloud_backup_refresh">刷新</string> <!-- TODO: machine translated | EN: Refresh -->
     <string name="cloud_backup_section_title">Drive 中的备份</string> <!-- TODO: machine translated | EN: Backups in Drive -->
     <string name="cloud_backup_empty">Drive 中还没有备份。</string> <!-- TODO: machine translated | EN: No backups in Drive yet. -->
@@ -524,7 +531,11 @@
     <string name="cloud_backup_uploaded_with_failures">备份已上传到 Google Drive，但有 %1$d 张照片无法添加。</string> <!-- TODO: machine translated | EN: Backup uploaded to Google Drive, but %1$d photos could not be added. -->
     <string name="cloud_backup_deleted">已从 Google Drive 删除 %1$s。</string> <!-- TODO: machine translated | EN: Deleted %1$s from Google Drive. -->
     <string name="cloud_backup_dismiss">关闭</string> <!-- TODO: machine translated | EN: Dismiss -->
-    <string name="cloud_backup_error_not_configured">此版本未配置 Google Drive。</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. -->
+    <string name="cloud_backup_error_not_configured">Google Drive 凭据未设置。</string> <!-- TODO: machine translated | EN: Google Drive credentials are not set up. -->
+    <string name="cloud_backup_error_credentials_locked">Google Drive 凭据已锁定。请输入保险库密码。</string> <!-- TODO: machine translated | EN: Google Drive credentials are locked. Enter your vault password. -->
+    <string name="cloud_backup_error_credentials_invalid">该 JSON 不是有效的 Google OAuth 客户端。请粘贴桌面应用客户端的 google.json。</string> <!-- TODO: machine translated | EN: That JSON is not a valid Google OAuth client. Paste the google.json from a Desktop app client. -->
+    <string name="cloud_backup_error_credentials_corrupt">无法读取已保存的 Drive 凭据。请重新粘贴 google.json。</string> <!-- TODO: machine translated | EN: The stored Drive credentials could not be read. Paste google.json again. -->
+    <string name="cloud_backup_error_wrong_password">保险库密码错误。</string> <!-- TODO: machine translated | EN: Wrong vault password. -->
     <string name="cloud_backup_error_not_connected">请先连接到 Google Drive。</string> <!-- TODO: machine translated | EN: Connect to Google Drive first. -->
     <string name="cloud_backup_error_auth">Google Drive 授权失败。请重新连接。</string> <!-- TODO: machine translated | EN: Google Drive authorization failed. Please connect again. -->
     <string name="cloud_backup_error_quota">你的 Google Drive 存储空间已满。</string> <!-- TODO: machine translated | EN: Your Google Drive storage is full. -->

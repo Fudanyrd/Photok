@@ -26,6 +26,16 @@ sealed class CloudError(message: String? = null, cause: Throwable? = null) :
 
     class NotConfigured : CloudError("Google Drive is not configured")
 
+    class CredentialsMissing : CloudError("Google Drive credentials are not set up")
+
+    class CredentialsLocked : CloudError("Google Drive credentials are locked")
+
+    class InvalidCredentialsJson : CloudError("The pasted OAuth client JSON is invalid")
+
+    class CredentialsCorrupt : CloudError("The stored Google Drive credentials are unreadable")
+
+    class WrongPassword : CloudError("Wrong vault password")
+
     class NotConnected : CloudError("Not connected to Google Drive")
 
     class AuthorizationFailed(cause: Throwable? = null) :

@@ -21,7 +21,7 @@ import dev.leonlatsch.photok.backup.cloud.data.oauth.createPkce
 import dev.leonlatsch.photok.backup.cloud.data.oauth.emailFromIdToken
 import dev.leonlatsch.photok.backup.cloud.data.oauth.parseOAuthRedirect
 import dev.leonlatsch.photok.backup.cloud.data.oauth.parseOAuthTokens
-import dev.leonlatsch.photok.backup.cloud.data.CloudConfig
+import dev.leonlatsch.photok.backup.cloud.domain.DriveClientCredentials
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -32,10 +32,9 @@ import java.util.Base64
 
 class OAuthRequestsTest {
 
-    private val config = CloudConfig(
+    private val credentials = DriveClientCredentials(
         clientId = "client-id",
         clientSecret = "client-secret",
-        redirectHost = "localhost",
     )
 
     @Test
@@ -56,7 +55,7 @@ class OAuthRequestsTest {
     @Test
     fun `authorization request asks for offline drive access with pkce`() {
         val url = GoogleOAuth.authorizationUrl(
-            config = config,
+            credentials = credentials,
             redirectUri = "http://localhost:1234",
             codeChallenge = "challenge",
             state = "state",
@@ -73,6 +72,24 @@ class OAuthRequestsTest {
         assertEquals("consent", url.queryParameter("prompt"))
         assertEquals("state", url.queryParameter("state"))
         assertTrue(url.queryParameter("scope")!!.contains(GoogleOAuth.DRIVE_FILE_SCOPE))
+    }
+
+    @Test
+    fun `token request uses the runtime client credentials`() {
+        val body = GoogleOAuth.tokenRequestBody(
+            credentials = credentials,
+            code = "code",
+            redirectUri = "http://localhost:1234",
+            codeVerifier = "verifier",
+        ) as okhttp3.FormBody
+
+        val parameters = (0 until body.size).associate { index ->
+            body.name(index) to body.value(index)
+        }
+
+        assertEquals("client-id", parameters["client_id"])
+        assertEquals("client-secret", parameters["client_secret"])
+        assertEquals("code", parameters["code"])
     }
 
     @Test
@@ -125,13 +142,12 @@ class OAuthRequestsTest {
     }
 
     @Test
-    fun `config never prints the client secret`() {
-        val config = CloudConfig(
+    fun `credentials never print the client secret`() {
+        val credentials = DriveClientCredentials(
             clientId = "client-id",
             clientSecret = "super-secret",
-            redirectHost = "localhost",
         )
 
-        assertFalse(config.toString().contains("super-secret"))
+        assertFalse(credentials.toString().contains("super-secret"))
     }
 }

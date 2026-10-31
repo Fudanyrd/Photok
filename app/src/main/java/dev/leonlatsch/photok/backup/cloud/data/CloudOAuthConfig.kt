@@ -19,20 +19,11 @@ package dev.leonlatsch.photok.backup.cloud.data
 import dev.leonlatsch.photok.BuildConfig
 
 /**
- * OAuth client configuration for the Google Drive backup.
+ * Non-secret OAuth configuration for the Google Drive backup.
  *
- * The values come from the build (Gradle property, environment, or the untracked `.env`
- * file) and are never committed. Without them the feature reports itself as not configured
- * and makes no network calls.
+ * The redirect host is still part of the build because it must match the registered OAuth
+ * client. Client credentials are imported at runtime and stored encrypted.
  */
-data class CloudConfig(
-    val clientId: String = BuildConfig.DRIVE_CLIENT_ID,
-    val clientSecret: String = BuildConfig.DRIVE_CLIENT_SECRET,
+data class CloudOAuthConfig(
     val redirectHost: String = BuildConfig.DRIVE_REDIRECT_HOST,
-) {
-    val isConfigured: Boolean
-        get() = clientId.isNotBlank() && clientSecret.isNotBlank()
-
-    override fun toString(): String =
-        "CloudConfig(clientId=$clientId, clientSecret=***, redirectHost=$redirectHost)"
-}
+)

@@ -20,7 +20,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.leonlatsch.photok.backup.cloud.data.CloudConfig
+import dev.leonlatsch.photok.backup.cloud.data.CloudOAuthConfig
 import dev.leonlatsch.photok.backup.cloud.data.oauth.GoogleOAuth
 import dev.leonlatsch.photok.backup.cloud.data.oauth.GoogleTokenClient
 import dev.leonlatsch.photok.backup.cloud.data.oauth.LoopbackOAuthServer
@@ -29,8 +29,10 @@ import dev.leonlatsch.photok.backup.cloud.data.oauth.createPkce
 import dev.leonlatsch.photok.backup.cloud.data.oauth.emailFromIdToken
 import dev.leonlatsch.photok.backup.cloud.domain.CloudAuth
 import dev.leonlatsch.photok.backup.cloud.domain.CloudConnection
+import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsState
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
 import dev.leonlatsch.photok.backup.cloud.domain.CloudSession
+import dev.leonlatsch.photok.backup.cloud.domain.DriveClientCredentials
 import dev.leonlatsch.photok.backup.cloud.domain.OAuthBrowser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -53,9 +55,10 @@ import kotlin.coroutines.coroutineContext
 @Singleton
 class GoogleCloudAuth @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val config: CloudConfig,
+    private val config: CloudOAuthConfig,
     private val tokenClient: GoogleTokenClient,
     private val tokenStore: CloudTokenStore,
+    private val credentialsSession: CloudCredentialsSession,
 ) : CloudAuth {
 
     /**
@@ -81,11 +84,16 @@ class GoogleCloudAuth @Inject constructor(
     private val _lastError = MutableStateFlow<CloudError?>(null)
     override val lastError: StateFlow<CloudError?> = _lastError.asStateFlow()
 
-    override val configured: Boolean = config.isConfigured
+    override val credentialsState: StateFlow<CloudCredentialsState> = credentialsSession.state
 
     override fun connect(browser: OAuthBrowser) {
-        if (!config.isConfigured) {
-            _lastError.value = CloudError.NotConfigured()
+        val credentials = credentialsSession.credentials
+        if (credentials == null) {
+            _lastError.value = when (credentialsSession.state.value) {
+                CloudCredentialsState.Missing -> CloudError.CredentialsMissing()
+                CloudCredentialsState.Locked, CloudCredentialsState.Unlocked ->
+                    CloudError.CredentialsLocked()
+            }
             return
         }
 
@@ -100,7 +108,7 @@ class GoogleCloudAuth @Inject constructor(
 
         connectJob = flowScope.launch {
             try {
-                runConnect(browser)
+                runConnect(browser, credentials)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -139,19 +147,26 @@ class GoogleCloudAuth @Inject constructor(
         _lastError.value = null
     }
 
-    override suspend fun disconnect() {
+    override suspend fun forgetOAuthSession() {
         cancelConnect()
-
-        val session = tokenStore.load()
         tokenStore.clear()
         _connection.value = CloudConnection.Disconnected
         _lastError.value = null
+    }
+
+    override suspend fun disconnect() {
+        val session = tokenStore.load()
+        forgetOAuthSession()
+        credentialsSession.lock()
 
         session?.refreshToken?.let { tokenClient.revoke(it) }
     }
 
     override suspend fun accessToken(forceRefresh: Boolean): Result<String> =
         refreshMutex.withLock {
+            val credentials = credentialsSession.credentials
+                ?: return@withLock Result.failure(credentialsLockedError())
+
             val session = tokenStore.load()
                 ?: return@withLock Result.failure(CloudError.NotConnected())
 
@@ -162,7 +177,7 @@ class GoogleCloudAuth @Inject constructor(
             val refreshToken = session.refreshToken
                 ?: return@withLock Result.failure(CloudError.NotConnected())
 
-            tokenClient.refresh(refreshToken).fold(
+            tokenClient.refresh(credentials, refreshToken).fold(
                 onSuccess = { tokens ->
                     val updated = tokenStore.update { current ->
                         current.copy(
@@ -190,7 +205,10 @@ class GoogleCloudAuth @Inject constructor(
             )
         }
 
-    private suspend fun runConnect(browser: OAuthBrowser) = withContext(Dispatchers.IO) {
+    private suspend fun runConnect(
+        browser: OAuthBrowser,
+        credentials: DriveClientCredentials,
+    ) = withContext(Dispatchers.IO) {
         val server = LoopbackOAuthServer(config.redirectHost)
         currentServer = server
 
@@ -198,7 +216,7 @@ class GoogleCloudAuth @Inject constructor(
             val pkce = createPkce()
             val state = createOAuthState()
             val authorizationUrl = GoogleOAuth.authorizationUrl(
-                config = config,
+                credentials = credentials,
                 redirectUri = server.redirectUri,
                 codeChallenge = pkce.challenge,
                 state = state,
@@ -227,7 +245,7 @@ class GoogleCloudAuth @Inject constructor(
                 )
 
             val tokens = tokenClient
-                .exchangeCode(code, server.redirectUri, pkce.verifier)
+                .exchangeCode(credentials, code, server.redirectUri, pkce.verifier)
                 .getOrThrow()
 
             val session = CloudSession(
@@ -235,6 +253,7 @@ class GoogleCloudAuth @Inject constructor(
                 refreshToken = tokens.refreshToken,
                 expiresAt = tokens.expiresAt,
                 email = emailFromIdToken(tokens.idToken),
+                clientId = credentials.clientId,
             )
 
             tokenStore.save(session)
@@ -264,7 +283,18 @@ class GoogleCloudAuth @Inject constructor(
         }
     }
 
+    private fun credentialsLockedError(): CloudError =
+        when (credentialsSession.state.value) {
+            CloudCredentialsState.Missing -> CloudError.CredentialsMissing()
+            CloudCredentialsState.Locked, CloudCredentialsState.Unlocked ->
+                CloudError.CredentialsLocked()
+        }
+
     private fun initialConnection(): CloudConnection {
+        if (credentialsSession.state.value is CloudCredentialsState.Missing) {
+            return CloudConnection.Disconnected
+        }
+
         val session = tokenStore.load() ?: return CloudConnection.Disconnected
 
         return if (session.refreshToken != null || session.isAccessTokenUsable()) {

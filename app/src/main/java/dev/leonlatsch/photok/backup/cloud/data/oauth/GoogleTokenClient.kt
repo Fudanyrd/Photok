@@ -18,8 +18,8 @@ package dev.leonlatsch.photok.backup.cloud.data.oauth
 
 import com.google.gson.Gson
 import com.google.gson.JsonParser
-import dev.leonlatsch.photok.backup.cloud.data.CloudConfig
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
+import dev.leonlatsch.photok.backup.cloud.domain.DriveClientCredentials
 import dev.leonlatsch.photok.backup.cloud.data.awaitResponse
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -36,20 +36,23 @@ import javax.inject.Singleton
 @Singleton
 class GoogleTokenClient @Inject constructor(
     private val httpClient: OkHttpClient,
-    private val config: CloudConfig,
     private val gson: Gson,
 ) {
 
     suspend fun exchangeCode(
+        credentials: DriveClientCredentials,
         code: String,
         redirectUri: String,
         codeVerifier: String,
     ): Result<OAuthTokens> = tokenRequest(
-        GoogleOAuth.tokenRequestBody(config, code, redirectUri, codeVerifier)
+        GoogleOAuth.tokenRequestBody(credentials, code, redirectUri, codeVerifier)
     )
 
-    suspend fun refresh(refreshToken: String): Result<OAuthTokens> = tokenRequest(
-        GoogleOAuth.refreshRequestBody(config, refreshToken)
+    suspend fun refresh(
+        credentials: DriveClientCredentials,
+        refreshToken: String,
+    ): Result<OAuthTokens> = tokenRequest(
+        GoogleOAuth.refreshRequestBody(credentials, refreshToken)
     )
 
     /**

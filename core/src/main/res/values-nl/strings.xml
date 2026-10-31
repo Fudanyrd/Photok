@@ -231,6 +231,7 @@
     <string name="change_password_confirm_new_password">Bevestig je nieuwe wachtwoord</string>
     <string name="change_password_button">Wijzig wachtwoord</string>
     <string name="change_password_done">Wachtwoord is gewijzigd</string> <!-- TODO: machine translated | EN: Password has been changed -->
+    <string name="change_password_done_credentials_cleared">Wachtwoord gewijzigd. Drive-inloggegevens zijn gewist; plak google.json opnieuw.</string> <!-- TODO: machine translated | EN: Password changed. Drive credentials were cleared; paste google.json again. -->
     <string name="change_password_recovery_phrase_used">Herstelzin gebruikt — controle van oud wachtwoord niet vereist</string> <!-- TODO: machine translated | EN: Recovery phrase was used — old password check not required -->
 
     <!-- HIDE APP -->
@@ -495,8 +496,14 @@
     <string name="cloud_backup_disconnect">Loskoppelen</string> <!-- TODO: machine translated | EN: Disconnect -->
     <string name="cloud_backup_connecting">Wachten op Google…</string> <!-- TODO: machine translated | EN: Waiting for Google… -->
     <string name="cloud_backup_not_connected">Niet verbonden</string> <!-- TODO: machine translated | EN: Not connected -->
-    <string name="cloud_backup_not_configured">Niet geconfigureerd</string> <!-- TODO: machine translated | EN: Not configured -->
-    <string name="cloud_backup_not_configured_help">Google Drive is niet geconfigureerd in deze build. Voeg OAuth-inloggegevens toe bij het bouwen om cloudback-up in te schakelen.</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. Add OAuth credentials when building to enable cloud backup. -->
+    <string name="cloud_backup_not_configured">Drive-inloggegevens niet ingesteld</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
+    <string name="cloud_backup_not_configured_help">Plak het bestand google.json uit je Google Cloud OAuth-client om cloudback-up in te schakelen.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
+    <string name="cloud_backup_credentials_import">google.json importeren</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_credentials_json">OAuth-client-JSON</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
+    <string name="cloud_backup_credentials_locked">Inloggegevens vergrendeld</string> <!-- TODO: machine translated | EN: Credentials locked -->
+    <string name="cloud_backup_credentials_unlock_title">Google Drive ontgrendelen</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->
+    <string name="cloud_backup_credentials_unlock_message">Voer je kluiswachtwoord in om de opgeslagen Drive-inloggegevens te ontgrendelen.</string> <!-- TODO: machine translated | EN: Enter your vault password to unlock the stored Drive credentials. -->
+    <string name="cloud_backup_credentials_unlock">Ontgrendelen</string> <!-- TODO: machine translated | EN: Unlock -->
     <string name="cloud_backup_refresh">Vernieuwen</string> <!-- TODO: machine translated | EN: Refresh -->
     <string name="cloud_backup_section_title">Back-ups in Drive</string> <!-- TODO: machine translated | EN: Backups in Drive -->
     <string name="cloud_backup_empty">Nog geen back-ups in Drive.</string> <!-- TODO: machine translated | EN: No backups in Drive yet. -->
@@ -522,7 +529,11 @@
     <string name="cloud_backup_uploaded_with_failures">Back-up geüpload naar Google Drive, maar %1$d foto\'s konden niet worden toegevoegd.</string> <!-- TODO: machine translated | EN: Backup uploaded to Google Drive, but %1$d photos could not be added. -->
     <string name="cloud_backup_deleted">%1$s verwijderd uit Google Drive.</string> <!-- TODO: machine translated | EN: Deleted %1$s from Google Drive. -->
     <string name="cloud_backup_dismiss">Sluiten</string> <!-- TODO: machine translated | EN: Dismiss -->
-    <string name="cloud_backup_error_not_configured">Google Drive is niet geconfigureerd in deze build.</string> <!-- TODO: machine translated | EN: Google Drive is not configured in this build. -->
+    <string name="cloud_backup_error_not_configured">De Google Drive-inloggegevens zijn niet ingesteld.</string> <!-- TODO: machine translated | EN: Google Drive credentials are not set up. -->
+    <string name="cloud_backup_error_credentials_locked">De Google Drive-inloggegevens zijn vergrendeld. Voer je kluiswachtwoord in.</string> <!-- TODO: machine translated | EN: Google Drive credentials are locked. Enter your vault password. -->
+    <string name="cloud_backup_error_credentials_invalid">Die JSON is geen geldige Google OAuth-client. Plak de google.json van een desktop-app-client.</string> <!-- TODO: machine translated | EN: That JSON is not a valid Google OAuth client. Paste the google.json from a Desktop app client. -->
+    <string name="cloud_backup_error_credentials_corrupt">De opgeslagen Drive-inloggegevens konden niet worden gelezen. Plak google.json opnieuw.</string> <!-- TODO: machine translated | EN: The stored Drive credentials could not be read. Paste google.json again. -->
+    <string name="cloud_backup_error_wrong_password">Onjuist kluiswachtwoord.</string> <!-- TODO: machine translated | EN: Wrong vault password. -->
     <string name="cloud_backup_error_not_connected">Maak eerst verbinding met Google Drive.</string> <!-- TODO: machine translated | EN: Connect to Google Drive first. -->
     <string name="cloud_backup_error_auth">Autorisatie voor Google Drive mislukt. Maak opnieuw verbinding.</string> <!-- TODO: machine translated | EN: Google Drive authorization failed. Please connect again. -->
     <string name="cloud_backup_error_quota">Je Google Drive-opslag is vol.</string> <!-- TODO: machine translated | EN: Your Google Drive storage is full. -->

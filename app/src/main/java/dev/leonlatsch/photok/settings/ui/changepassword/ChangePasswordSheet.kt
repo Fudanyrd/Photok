@@ -98,7 +98,15 @@ private fun SheetContent(
 
     LaunchedEffect(uiState.done) {
         if (uiState.done) {
-            Toast.makeText(context, R.string.change_password_done, Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                context,
+                if (uiState.credentialsCleared) {
+                    R.string.change_password_done_credentials_cleared
+                } else {
+                    R.string.change_password_done
+                },
+                Toast.LENGTH_LONG,
+            ).show()
 
             scope.launch {
                 sheetState.hide()
