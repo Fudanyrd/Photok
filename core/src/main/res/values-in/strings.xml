@@ -38,6 +38,7 @@
     <string name="common_hold_to_confirm">Tahan untuk mengonfirmasi</string>
     <string name="common_back">Kembali</string> <!-- TODO: machine translated | EN: Back -->
     <string name="common_done">Selesai</string> <!-- TODO: machine translated | EN: Done -->
+    <string name="common_press_back_again_to_exit">Tekan Kembali sekali lagi untuk keluar</string> <!-- TODO: machine translated | EN: Press back again to exit -->
 
     <!-- IMPORT -->
     <string name="import_importing">Mengimpor File</string>
@@ -357,7 +358,7 @@
     <string name="migration_initial_stage_ready_button">Mulai migrasi</string>
 
     <string name="migration_running_title">Memigrasikan galerimu</string>
-    <string name="migration_running_progress">%d dari %d file diproses</string>
+    <string name="migration_running_progress">%1$d dari %2$d file diproses</string>
     <string name="migration_running_advice">Kalau layar ini tetap terbuka, migrasi dapat berjalan lebih cepat.</string>
 
     <string name="migration_done_title">Migrasi galeri telah selesai</string>

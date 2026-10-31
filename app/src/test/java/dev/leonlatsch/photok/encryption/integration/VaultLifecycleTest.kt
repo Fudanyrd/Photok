@@ -22,10 +22,12 @@ import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsRepository
 import dev.leonlatsch.photok.encryption.domain.ChangePasswordUseCase
 import dev.leonlatsch.photok.encryption.domain.SessionRepository
 import dev.leonlatsch.photok.encryption.domain.VaultProtectionRepository
+import dev.leonlatsch.photok.encryption.domain.VaultService
 import dev.leonlatsch.photok.encryption.domain.crypto.KeyGen
 import dev.leonlatsch.photok.encryption.domain.handlers.PasswordVaultProtectionHandler
 import dev.leonlatsch.photok.encryption.domain.models.CreateRequest
 import dev.leonlatsch.photok.encryption.domain.models.Kdf
+import dev.leonlatsch.photok.encryption.domain.models.KekSpec
 import dev.leonlatsch.photok.encryption.domain.models.UnlockRequest
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtection
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtectionType
@@ -37,6 +39,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -45,6 +48,9 @@ import org.junit.runner.RunWith
 import org.mindrot.jbcrypt.BCrypt
 import org.robolectric.RobolectricTestRunner
 import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.SecretKey
+import javax.crypto.spec.IvParameterSpec
 import dev.leonlatsch.photok.settings.data.Config as AppConfig
 
 /**
@@ -64,7 +70,16 @@ class VaultLifecycleTest {
     private val mockCloudCredentialsRepository = mockk<CloudCredentialsRepository>(relaxed = true)
     private val mockCloudCredentialsSession = mockk<CloudCredentialsSession>(relaxed = true)
     private val mockCloudTokenStore = mockk<CloudTokenStore>(relaxed = true)
+
+    private val vaultService = VaultService(
+        vaultProtectionRepository = mockProtectionRepository,
+        passwordProtectionHandler = handler,
+        biometricProtectionHandler = mockk(),
+        recoveryPhraseProtectionHandler = mockk(),
+        config = mockConfig,
+    )
     private val changePasswordUseCase = ChangePasswordUseCase(
+        vaultService = vaultService,
         vaultProtectionRepository = mockProtectionRepository,
         sessionRepository = mockSessionRepository,
         keyGen = keyGen,
@@ -91,14 +106,14 @@ class VaultLifecycleTest {
      */
     @Test
     fun `create vault and unlock returns consistent VMK`() = runTest {
-        val protection = handler.create(CreateRequest.Password(password))
+        val protection = handler.create(CreateRequest.Password.NewVault(password))
         val request = UnlockRequest.Password(password)
 
         val vmk1 = handler.unlock(request, protection)
         val vmk2 = handler.unlock(request, protection)
         assertArrayEquals("Unlock must return the same VMK on every call", vmk1.encoded, vmk2.encoded)
 
-        val otherProtection = handler.create(CreateRequest.Password(password))
+        val otherProtection = handler.create(CreateRequest.Password.NewVault(password))
         assertFalse(
             "Each create call must produce a unique salt",
             protection.params.salt == otherProtection.params.salt,
@@ -110,7 +125,7 @@ class VaultLifecycleTest {
      */
     @Test(expected = Exception::class)
     fun `wrong password cannot unlock vault`() = runTest {
-        val protection = handler.create(CreateRequest.Password(password))
+        val protection = handler.create(CreateRequest.Password.NewVault(password))
         handler.unlock(UnlockRequest.Password("wrong-password"), protection)
     }
 
@@ -122,13 +137,13 @@ class VaultLifecycleTest {
     fun `change password re-encrypts VMK, new password unlocks vault with same VMK, old password fails`() = runTest {
         val newPassword = "brand-new-password"
 
-        val initialProtection = handler.create(CreateRequest.Password(password))
+        val initialProtection = handler.create(CreateRequest.Password.NewVault(password))
         val initialVmk = handler.unlock(UnlockRequest.Password(password), initialProtection)
 
         val capturedProtection = slot<VaultProtection>()
         coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns initialProtection
         coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
-        coEvery { mockProtectionRepository.updateProtection(capture(capturedProtection)) } returns Unit
+        coEvery { mockProtectionRepository.createProtection(capture(capturedProtection)) } returns Unit
 
         changePasswordUseCase(oldPassword = password, newPassword = newPassword)
 
@@ -143,6 +158,207 @@ class VaultLifecycleTest {
 
         val oldPasswordResult = runCatching { handler.unlock(UnlockRequest.Password(password), newProtection) }
         assertTrue("Old password must no longer unlock the vault", oldPasswordResult.isFailure)
+    }
+
+    /**
+     * Regression test for the merge that introduced VaultService.update. Room's @Update matches
+     * by primary key, but the handler creates a new UUID for every protection. The repository
+     * state, not the object passed to the mock, must therefore be verified.
+     */
+    @Test
+    fun `change password is persisted and invalidates the old password after reload`() = runTest {
+        val repository = FakeVaultProtectionRepository()
+        val initialProtection = handler.create(CreateRequest.Password.NewVault(password))
+        repository.createProtection(initialProtection)
+        val initialVmk = handler.unlock(UnlockRequest.Password(password), initialProtection)
+        coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
+
+        changePasswordUseCaseWith(repository)(
+            oldPassword = password,
+            newPassword = "brand-new-password",
+        ).getOrThrow()
+
+        val stored = requireNotNull(repository.getProtection(VaultProtectionType.Password))
+        assertEquals(
+            "Changing the password must keep exactly one protection row",
+            1,
+            repository.count(VaultProtectionType.Password),
+        )
+
+        val newPasswordResult = runCatching {
+            handler.unlock(UnlockRequest.Password("brand-new-password"), stored)
+        }
+        assertTrue(
+            "New password must unlock the persisted protection after a reload",
+            newPasswordResult.isSuccess,
+        )
+        assertArrayEquals(initialVmk.encoded, newPasswordResult.getOrThrow().encoded)
+
+        assertTrue(
+            "Old password must no longer unlock the persisted protection after a reload",
+            runCatching { handler.unlock(UnlockRequest.Password(password), stored) }.isFailure,
+        )
+    }
+
+    /**
+     * The same no-op also blocks the 100K -> current KDF upgrade that a password change is
+     * supposed to persist.
+     */
+    @Test
+    fun `change password persists the KDF upgrade of a 100K protection`() = runTest {
+        val repository = FakeVaultProtectionRepository()
+        val vmk = keyGen.generateVaultMasterKey()
+        val initialProtection = createProtectionWith100KIterations(vmk)
+        repository.createProtection(initialProtection)
+        coEvery { mockSessionRepository.get() } returns VaultSession(vmk)
+
+        changePasswordUseCaseWith(repository)(
+            oldPassword = password,
+            newPassword = "brand-new-password",
+        ).getOrThrow()
+
+        val stored = requireNotNull(repository.getProtection(VaultProtectionType.Password))
+        assertEquals(
+            "The password change must persist the current KDF params",
+            KekSpec.Password.kdfIterations,
+            stored.params.kdfIterations,
+        )
+
+        val newPasswordResult = runCatching {
+            handler.unlock(UnlockRequest.Password("brand-new-password"), stored)
+        }
+        assertTrue(
+            "New password must unlock the upgraded persisted protection",
+            newPasswordResult.isSuccess,
+        )
+        assertArrayEquals(vmk.encoded, newPasswordResult.getOrThrow().encoded)
+    }
+
+    /**
+     * Vaults created before the iteration bump store 100K iterations. Unlock must use the stored
+     * count, not the current constant, or those users are locked out.
+     */
+    @Test
+    fun `vault created with 100K iterations still unlocks`() = runTest {
+        val vmk = keyGen.generateVaultMasterKey()
+        val legacyProtection = createProtectionWith100KIterations(vmk)
+
+        val unlockedVmk = handler.unlock(UnlockRequest.Password(password), legacyProtection)
+
+        assertArrayEquals("100K vault must unlock with the same VMK", vmk.encoded, unlockedVmk.encoded)
+    }
+
+    /**
+     * Changing the password of a 100K vault must upgrade it to [KekSpec.Password].
+     */
+    @Test
+    fun `change password upgrades 100K vault to current iterations`() = runTest {
+        val vmk = keyGen.generateVaultMasterKey()
+        val legacyProtection = createProtectionWith100KIterations(vmk)
+
+        val capturedProtection = slot<VaultProtection>()
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns legacyProtection
+        coEvery { mockSessionRepository.get() } returns VaultSession(vmk)
+        coEvery { mockProtectionRepository.createProtection(capture(capturedProtection)) } returns Unit
+
+        changePasswordUseCase("brand-new-password", "brand-new-password")
+
+        val newProtection = capturedProtection.captured
+        assertEquals(Kdf.PBKDF2WithHmacSHA256, newProtection.params.kdf)
+        val newProtectionIterations = newProtection.params.kdfIterations;
+        assertEquals(KekSpec.Password.kdfIterations, newProtectionIterations)
+
+        val unlockedVmk = handler.unlock(UnlockRequest.Password("brand-new-password"), newProtection)
+        assertArrayEquals("Upgraded vault must recover the same VMK", vmk.encoded, unlockedVmk.encoded)
+    }
+
+    /**
+     * Unlocking a 100K vault and then upgrading must store [KekSpec.Password] params that still
+     * unwrap the same VMK with the same password.
+     */
+    @Test
+    fun `upgrade after unlock moves 100K vault to current iterations`() = runTest {
+        val vmk = keyGen.generateVaultMasterKey()
+        val legacyProtection = createProtectionWith100KIterations(vmk)
+
+        val capturedProtection = slot<VaultProtection>()
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns legacyProtection
+        coEvery { mockProtectionRepository.createProtection(capture(capturedProtection)) } returns Unit
+
+        val session = vaultService.unlock(UnlockRequest.Password(password)).getOrThrow()
+        vaultService.upgradePasswordProtectionIfOutdated(password, session.vmk)
+
+        val newProtection = capturedProtection.captured
+        assertEquals(KekSpec.Password.kdfIterations, newProtection.params.kdfIterations)
+
+        val unlockedVmk = handler.unlock(UnlockRequest.Password(password), newProtection)
+        assertArrayEquals("Upgraded vault must recover the same VMK", vmk.encoded, unlockedVmk.encoded)
+    }
+
+    /**
+     * A failed upgrade must not throw; the old protection stays valid.
+     */
+    @Test
+    fun `failed upgrade of 100K vault does not throw`() = runTest {
+        val vmk = keyGen.generateVaultMasterKey()
+        val legacyProtection = createProtectionWith100KIterations(vmk)
+
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns legacyProtection
+        coEvery { mockProtectionRepository.createProtection(any()) } throws IllegalStateException("disk full")
+
+        vaultService.upgradePasswordProtectionIfOutdated(password, vmk)
+
+        val unlockedVmk = handler.unlock(UnlockRequest.Password(password), legacyProtection)
+        assertArrayEquals("Old protection must still unlock", vmk.encoded, unlockedVmk.encoded)
+    }
+
+    /**
+     * Unlock alone must never rewrite the protection, or a wrong password could lock the user out.
+     */
+    @Test
+    fun `unlock does not rewrite 100K vault`() = runTest {
+        val vmk = keyGen.generateVaultMasterKey()
+        val legacyProtection = createProtectionWith100KIterations(vmk)
+
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns legacyProtection
+
+        val wrongResult = vaultService.unlock(UnlockRequest.Password("wrong-password"))
+        vaultService.unlock(UnlockRequest.Password(password)).getOrThrow()
+
+        assertTrue("Wrong password must not unlock the vault", wrongResult.isFailure)
+        coVerify(exactly = 0) { mockProtectionRepository.createProtection(any()) }
+    }
+
+    /**
+     * A vault already on the current params must not be rewritten.
+     */
+    @Test
+    fun `upgrade is a no-op for current vault`() = runTest {
+        val vmk = keyGen.generateVaultMasterKey()
+        val protection = handler.create(CreateRequest.Password.NewVault(password))
+        coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns protection
+
+        vaultService.upgradePasswordProtectionIfOutdated(password, vmk)
+
+        coVerify(exactly = 0) { mockProtectionRepository.createProtection(any()) }
+    }
+
+    private suspend fun createProtectionWith100KIterations(vmk: SecretKey): VaultProtection {
+        val template = handler.create(CreateRequest.Password.NewVault(password))
+        val params = template.params.copy(kdfIterations = 100_000)
+
+        val kek = keyGen.derivePasswordKeyEncryptionKey(
+            password = password,
+            salt = Base64.getDecoder().decode(params.salt),
+            kdf = Kdf.PBKDF2WithHmacSHA256,
+            kdfIterations = 100_000,
+            keySize = params.keySize,
+        )
+        val cipher = Cipher.getInstance(params.algorithm.value).apply {
+            init(Cipher.ENCRYPT_MODE, kek, IvParameterSpec(Base64.getDecoder().decode(params.iv)))
+        }
+
+        return template.copy(wrappedVMK = cipher.doFinal(vmk.encoded), params = params)
     }
 
     /**
@@ -203,7 +419,7 @@ class VaultLifecycleTest {
     @Test
     fun `change password reencrypts the stored drive credentials`() = runTest {
         val newPassword = "brand-new-password"
-        val initialProtection = handler.create(CreateRequest.Password(password))
+        val initialProtection = handler.create(CreateRequest.Password.NewVault(password))
         val initialVmk = handler.unlock(UnlockRequest.Password(password), initialProtection)
 
         every { mockCloudCredentialsRepository.exists() } returns true
@@ -212,7 +428,7 @@ class VaultLifecycleTest {
         } returns Result.success(Unit)
         coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns initialProtection
         coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
-        coEvery { mockProtectionRepository.updateProtection(any()) } returns Unit
+        coEvery { mockProtectionRepository.createProtection(any()) } returns Unit
 
         val result = changePasswordUseCase(
             oldPassword = password,
@@ -229,7 +445,7 @@ class VaultLifecycleTest {
     @Test
     fun `failed credential reencryption clears drive credentials and tokens`() = runTest {
         val newPassword = "brand-new-password"
-        val initialProtection = handler.create(CreateRequest.Password(password))
+        val initialProtection = handler.create(CreateRequest.Password.NewVault(password))
         val initialVmk = handler.unlock(UnlockRequest.Password(password), initialProtection)
 
         every { mockCloudCredentialsRepository.exists() } returns true
@@ -238,7 +454,7 @@ class VaultLifecycleTest {
         } returns Result.failure(IllegalStateException("corrupt"))
         coEvery { mockProtectionRepository.getProtection(VaultProtectionType.Password) } returns initialProtection
         coEvery { mockSessionRepository.get() } returns VaultSession(initialVmk)
-        coEvery { mockProtectionRepository.updateProtection(any()) } returns Unit
+        coEvery { mockProtectionRepository.createProtection(any()) } returns Unit
 
         val result = changePasswordUseCase(
             oldPassword = password,
@@ -250,4 +466,53 @@ class VaultLifecycleTest {
         coVerify(exactly = 1) { mockCloudTokenStore.clear() }
         coVerify(exactly = 1) { mockCloudCredentialsSession.clear() }
     }
+
+    private fun changePasswordUseCaseWith(repository: VaultProtectionRepository): ChangePasswordUseCase {
+        return ChangePasswordUseCase(
+            vaultService = VaultService(
+                vaultProtectionRepository = repository,
+                passwordProtectionHandler = handler,
+                biometricProtectionHandler = mockk(),
+                recoveryPhraseProtectionHandler = mockk(),
+                config = mockConfig,
+            ),
+            vaultProtectionRepository = repository,
+            sessionRepository = mockSessionRepository,
+            keyGen = keyGen,
+            config = mockConfig,
+            cloudCredentialsRepository = mockCloudCredentialsRepository,
+            cloudCredentialsSession = mockCloudCredentialsSession,
+            cloudTokenStore = mockCloudTokenStore,
+        )
+    }
+}
+
+/**
+ * Minimal in-memory mirror of VaultProtectionDao. createProtection() replaces by the unique
+ * type index, while updateProtection() only replaces a row with the same primary key id.
+ * This reproduces the DAO semantics that the mock-based tests hide.
+ */
+private class FakeVaultProtectionRepository : VaultProtectionRepository {
+
+    private val rows = linkedMapOf<String, VaultProtection>()
+
+    override suspend fun getProtection(type: VaultProtectionType): VaultProtection? =
+        rows.values.firstOrNull { it.type == type }
+
+    override suspend fun createProtection(protection: VaultProtection) {
+        rows.values.removeAll { it.type == protection.type }
+        rows[protection.id] = protection
+    }
+
+    override suspend fun updateProtection(protection: VaultProtection) {
+        if (rows.containsKey(protection.id)) {
+            rows[protection.id] = protection
+        }
+    }
+
+    override suspend fun removeProtection(type: VaultProtectionType) {
+        rows.values.removeAll { it.type == type }
+    }
+
+    fun count(type: VaultProtectionType): Int = rows.values.count { it.type == type }
 }

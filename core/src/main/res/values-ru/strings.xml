@@ -38,6 +38,7 @@
     <string name="common_hold_to_confirm">Удерживайте для подтверждения</string>
     <string name="common_back">Назад</string> <!-- TODO: machine translated | EN: Back -->
     <string name="common_done">Готово</string> <!-- TODO: machine translated | EN: Done -->
+    <string name="common_press_back_again_to_exit">Нажми «Назад» ещё раз, чтобы выйти</string> <!-- TODO: machine translated | EN: Press back again to exit -->
 
     <!-- IMPORT -->
     <string name="import_importing">Импортирование файла(ов)</string>
@@ -357,7 +358,7 @@
     <string name="migration_initial_stage_ready_button">Начать миграцию</string> <!-- TODO: machine translated | EN: Start migration -->
 
     <string name="migration_running_title">Миграция вашей галереи</string> <!-- TODO: machine translated | EN: Migrating your gallery -->
-    <string name="migration_running_progress">Обработано %d из %d файлов</string> <!-- TODO: machine translated | EN: %d of %d files processed -->
+    <string name="migration_running_progress">Обработано %1$d из %2$d файлов</string> <!-- TODO: machine translated | EN: %1$d of %2$d files processed -->
     <string name="migration_running_advice">Если этот экран остаётся открытым, миграция выполняется быстрее</string> <!-- TODO: machine translated | EN: If this screen stays open, the migration will run faster -->
 
     <string name="migration_done_title">Миграция галереи завершена</string> <!-- TODO: machine translated | EN: Gallery migration done -->

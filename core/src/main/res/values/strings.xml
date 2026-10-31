@@ -38,6 +38,7 @@
     <string name="common_hold_to_confirm">Hold to confirm</string>
     <string name="common_back">Back</string>
     <string name="common_done">Done</string>
+    <string name="common_press_back_again_to_exit">Press back again to exit</string>
 
     <!-- IMPORT -->
     <string name="import_importing">Importing File(s)</string>
@@ -357,7 +358,7 @@
     <string name="migration_initial_stage_ready_button">Start migration</string>
 
     <string name="migration_running_title">Migrating your gallery</string>
-    <string name="migration_running_progress">%d of %d files processed</string>
+    <string name="migration_running_progress">%1$d of %2$d files processed</string>
     <string name="migration_running_advice">If this screen stays open, the migration will run faster.</string>
 
     <string name="migration_done_title">Gallery migration done</string>

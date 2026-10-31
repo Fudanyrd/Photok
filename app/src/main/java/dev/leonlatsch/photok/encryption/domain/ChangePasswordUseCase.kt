@@ -19,23 +19,19 @@ package dev.leonlatsch.photok.encryption.domain
 import dev.leonlatsch.photok.backup.cloud.data.auth.CloudCredentialsSession
 import dev.leonlatsch.photok.backup.cloud.data.auth.CloudTokenStore
 import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsRepository
-import dev.leonlatsch.photok.encryption.domain.crypto.IV_SIZE
 import dev.leonlatsch.photok.encryption.domain.crypto.KeyGen
-import dev.leonlatsch.photok.encryption.domain.crypto.SALT_SIZE
+import dev.leonlatsch.photok.encryption.domain.models.CreateRequest
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtectionType
 import dev.leonlatsch.photok.settings.data.Config
 import timber.log.Timber
-import java.security.SecureRandom
-import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
 import javax.inject.Inject
-import kotlin.io.encoding.Base64
 
 data class ChangePasswordResult(
     val credentialsCleared: Boolean,
 )
 
 class ChangePasswordUseCase @Inject constructor(
+    private val vaultService: VaultService,
     private val vaultProtectionRepository: VaultProtectionRepository,
     private val sessionRepository: SessionRepository,
     private val keyGen: KeyGen,
@@ -61,40 +57,12 @@ class ChangePasswordUseCase @Inject constructor(
     }
 
     private suspend fun updateVaultPassword(newPassword: String) {
-        val currentProtection = vaultProtectionRepository.getProtection(VaultProtectionType.Password)
-        requireNotNull(currentProtection)
+        require(vaultService.isSetup(VaultProtectionType.Password)) { "Password protection is missing" }
 
         val session = requireNotNull(sessionRepository.get()) { "Vault is locked" }
 
-        val newSalt = ByteArray(SALT_SIZE).also { SecureRandom().nextBytes(it) }
-        val newIv = ByteArray(IV_SIZE).also { SecureRandom().nextBytes(it) }
-
-        val newKek = keyGen.derivePasswordKeyEncryptionKey(
-            password = newPassword,
-            salt = newSalt,
-            kdf = requireNotNull(currentProtection.params.kdf) { "Password protection is missing KDF" },
-            kdfIterations = requireNotNull(currentProtection.params.kdfIterations) { "Password protection is missing KDF iterations" },
-            keySize = currentProtection.params.keySize,
-        )
-
-        val cipher = Cipher.getInstance(currentProtection.params.algorithm.value).apply {
-            init(Cipher.ENCRYPT_MODE, newKek, IvParameterSpec(newIv))
-        }
-
-        val newWrappedVmk = cipher.doFinal(session.vmk.encoded)
-
-        val newParams = currentProtection.params.copy(
-            salt = Base64.encode(newSalt),
-            iv = Base64.encode(newIv),
-        )
-
-        val newProtection = currentProtection.copy(
-            wrappedVMK = newWrappedVmk,
-            params = newParams,
-        )
-
-        vaultProtectionRepository.updateProtection(newProtection)
-        config.lastUsedUnlockMethod = newProtection.type
+        vaultService.update(CreateRequest.Password.ExistingVault(newPassword, session))
+        config.lastUsedUnlockMethod = VaultProtectionType.Password
     }
 
     private suspend fun clearOrReencryptCloudCredentials(

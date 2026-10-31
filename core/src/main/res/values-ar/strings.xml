@@ -38,6 +38,7 @@
     <string name="common_hold_to_confirm">اضغط مطولاً للتأكيد</string>
     <string name="common_back">رجوع</string> <!-- TODO: machine translated | EN: Back -->
     <string name="common_done">تم</string> <!-- TODO: machine translated | EN: Done -->
+    <string name="common_press_back_again_to_exit">اضغط على رجوع مرة أخرى للخروج</string> <!-- TODO: machine translated | EN: Press back again to exit -->
 
     <!-- IMPORT -->
     <string name="import_importing">استيراد ملف (ملفات) </string>
@@ -356,7 +357,7 @@
     <string name="migration_initial_stage_ready_button">بدء الترحيل</string> <!-- TODO: machine translated | EN: Start migration -->
 
     <string name="migration_running_title">جارٍ ترحيل معرض الصور الخاص بك</string> <!-- TODO: machine translated | EN: Migrating your gallery -->
-    <string name="migration_running_progress">تمت معالجة %d من %d ملف</string> <!-- TODO: machine translated | EN: %d of %d files processed -->
+    <string name="migration_running_progress">تمت معالجة %1$d من %2$d ملف</string> <!-- TODO: machine translated | EN: %1$d of %2$d files processed -->
     <string name="migration_running_advice">إذا بقيت هذه الشاشة مفتوحة، ستكون عملية الترحيل أسرع</string> <!-- TODO: machine translated | EN: If this screen stays open, the migration will run faster -->
 
     <string name="migration_done_title">اكتمل ترحيل معرض الصور</string> <!-- TODO: machine translated | EN: Gallery migration done -->

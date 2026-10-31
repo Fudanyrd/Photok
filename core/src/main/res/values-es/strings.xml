@@ -38,6 +38,7 @@
     <string name="common_hold_to_confirm">Mantén pulsado para confirmar</string>
     <string name="common_back">Atrás</string> <!-- TODO: machine translated | EN: Back -->
     <string name="common_done">Hecho</string> <!-- TODO: machine translated | EN: Done -->
+    <string name="common_press_back_again_to_exit">Pulsa Atrás otra vez para salir</string> <!-- TODO: machine translated | EN: Press back again to exit -->
 
     <!-- IMPORT -->
     <string name="import_importing">Importando archivo(s)</string>
@@ -358,7 +359,7 @@
     <string name="migration_initial_stage_ready_button">Iniciar migración</string>
 
     <string name="migration_running_title">Migrando tu galería</string>
-    <string name="migration_running_progress">%d de %d archivos procesados</string>
+    <string name="migration_running_progress">%1$d de %2$d archivos procesados</string>
     <string name="migration_running_advice">Si esta pantalla se mantiene abierta, la migración será más rápida</string>
 
     <string name="migration_done_title">Migración de galería terminada</string>

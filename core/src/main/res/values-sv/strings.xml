@@ -38,6 +38,7 @@
     <string name="common_hold_to_confirm">Håll in för att bekräfta</string>
     <string name="common_back">Tillbaka</string>
     <string name="common_done">Klar</string>
+    <string name="common_press_back_again_to_exit">Tryck på Tillbaka igen för att avsluta</string> <!-- TODO: machine translated | EN: Press back again to exit -->
 
     <!-- IMPORT -->
     <string name="import_importing">Importerar fil(er)</string>
@@ -357,7 +358,7 @@
     <string name="migration_initial_stage_ready_button">Starta migrering</string>
 
     <string name="migration_running_title">Migrerar ditt galleri</string>
-    <string name="migration_running_progress">%d av %d filer behandlade</string>
+    <string name="migration_running_progress">%1$d av %2$d filer behandlade</string>
     <string name="migration_running_advice">Om den här skärmen hålls öppen går migreringen snabbare.</string>
 
     <string name="migration_done_title">Galleri-migrering klar</string>
