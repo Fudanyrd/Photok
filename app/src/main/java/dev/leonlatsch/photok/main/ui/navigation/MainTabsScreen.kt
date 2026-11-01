@@ -60,6 +60,7 @@ import dev.leonlatsch.photok.settings.ui.AboutScreen
 import dev.leonlatsch.photok.settings.ui.compose.SettingsScreen
 import dev.leonlatsch.photok.settings.ui.credits.CreditsScreen
 import dev.leonlatsch.photok.settings.ui.thirdparty.OssLicensesScreen
+import dev.leonlatsch.photok.textviewer.ui.compose.TextViewerScreen
 import dev.leonlatsch.photok.ui.animation.slideBackward
 import dev.leonlatsch.photok.ui.animation.slideForward
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -208,6 +209,9 @@ private val tabEntryProvider = entryProvider<NavKey> {
                 albumUuid = route.albumUuid,
             )
         }
+    }
+    entry<AppRoute.TextViewer> { route ->
+        TextViewerScreen(photoUuid = route.photoUuid)
     }
     entry<AppRoute.Settings> {
         SettingsScreen()

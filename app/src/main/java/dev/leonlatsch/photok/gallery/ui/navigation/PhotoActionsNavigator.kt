@@ -41,6 +41,8 @@ object PhotoActionsNavigator {
             )
 
             is PhotoAction.OpenPhoto -> navigateOpenPhoto(action.photoUUID, action.albumUUID, navigator)
+
+            is PhotoAction.OpenText -> navigateOpenText(action.photoUUID, navigator)
         }
     }
 
@@ -62,10 +64,15 @@ object PhotoActionsNavigator {
     private fun navigateOpenPhoto(photoUUID: String, albumUUID: String, navigator: Navigator) {
         navigator.navigate(AppRoute.ImageViewer(photoUuid = photoUUID, albumUuid = albumUUID.takeIf { it.isNotEmpty() }))
     }
+
+    private fun navigateOpenText(photoUUID: String, navigator: Navigator) {
+        navigator.navigate(AppRoute.TextViewer(photoUuid = photoUUID))
+    }
 }
 
 sealed interface PhotoAction {
     data class OpenPhoto(val photoUUID: String, val albumUUID: String = "") : PhotoAction
+    data class OpenText(val photoUUID: String) : PhotoAction
     data class DeletePhotos(val photos: List<Photo>) : PhotoAction
     data class ExportPhotos(val photos: List<Photo>, val target: Uri) : PhotoAction
 }

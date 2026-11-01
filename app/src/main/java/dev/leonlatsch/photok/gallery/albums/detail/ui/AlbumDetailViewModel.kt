@@ -33,6 +33,8 @@ import dev.leonlatsch.photok.gallery.ui.navigation.PhotoAction
 import dev.leonlatsch.photok.gallery.ui.navigation.PhotoAction.DeletePhotos
 import dev.leonlatsch.photok.gallery.ui.navigation.PhotoAction.ExportPhotos
 import dev.leonlatsch.photok.gallery.ui.navigation.PhotoAction.OpenPhoto
+import dev.leonlatsch.photok.gallery.ui.navigation.PhotoAction.OpenText
+import dev.leonlatsch.photok.model.database.entity.PhotoType
 import dev.leonlatsch.photok.sort.domain.SortConfig
 import dev.leonlatsch.photok.sort.domain.SortRepository
 import kotlinx.coroutines.Dispatchers
@@ -108,12 +110,16 @@ class AlbumDetailViewModel @AssistedInject constructor(
             }
 
             is AlbumDetailUiEvent.OpenPhoto -> {
-                photoActionsChannel.trySend(
+                val action = if (event.item.type == PhotoType.TEXT) {
+                    OpenText(event.item.uuid)
+                } else {
                     OpenPhoto(
                         event.item.uuid,
                         albumFlow.value.uuid
                     )
-                )
+                }
+
+                photoActionsChannel.trySend(action)
             }
 
             AlbumDetailUiEvent.DeleteAlbum -> {

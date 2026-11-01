@@ -36,6 +36,9 @@ sealed interface AppRoute : NavKey {
     data class ImageViewer(val photoUuid: String, val albumUuid: String?) : AppRoute
 
     @Serializable
+    data class TextViewer(val photoUuid: String) : AppRoute
+
+    @Serializable
     data object Settings : AppRoute
 
     @Serializable

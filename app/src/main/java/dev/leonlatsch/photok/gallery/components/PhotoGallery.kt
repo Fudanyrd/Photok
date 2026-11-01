@@ -74,6 +74,8 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -255,6 +257,64 @@ fun PhotoGallery(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun GalleryTextTile(
+    photo: PhotoTile,
+    multiSelectionActive: Boolean,
+    selected: Boolean,
+    onClicked: () -> Unit,
+    onLongPress: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .padding(.5.dp)
+            .combinedClickable(
+                role = Role.Button,
+                onClick = onClicked,
+                onLongClick = onLongPress,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            )
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .multiSelectionItem(selected)
+                .fillMaxSize()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer),
+        ) {
+            Text(
+                text = photo.fileName,
+                textAlign = TextAlign.Center,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(Dimens.spacingSmall),
+            )
+        }
+
+        AnimatedVisibility(
+            visible = multiSelectionActive && selected,
+            enter = scaleIn(),
+            exit = scaleOut(),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_check_circle),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .padding(CheckmarkPadding)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.background)
+                    .align(Alignment.TopStart)
+            )
+        }
+    }
+}
+
 @Composable
 private fun PhotoGrid(
     photos: List<PhotoTile>,
@@ -311,32 +371,46 @@ private fun PhotoGrid(
         }
 
         items(photos, key = { it.uuid }) {
-            GalleryPhotoTile(
-                photoTile = it,
-                multiSelectionActive = multiSelectionState.isActive.value,
-                onClicked = {
-                    if (multiSelectionState.isActive.value.not()) {
-                        openPhoto(it)
-                        return@GalleryPhotoTile
-                    }
-
+            val onClicked = {
+                if (multiSelectionState.isActive.value) {
                     if (multiSelectionState.selectedItems.value.contains(it.uuid)) {
                         multiSelectionState.deselectItem(it.uuid)
                     } else {
                         multiSelectionState.selectItem(it.uuid)
                     }
-                    
+
                     haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                },
-                selected = multiSelectionState.selectedItems.value.contains(it.uuid),
-                onLongPress = {
-                    if (multiSelectionState.isActive.value.not()) {
-                        multiSelectionState.selectItem(it.uuid)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
-                },
-                modifier = Modifier.animateItem(),
-            )
+                } else {
+                    openPhoto(it)
+                }
+            }
+
+            val onLongPress = {
+                if (multiSelectionState.isActive.value.not()) {
+                    multiSelectionState.selectItem(it.uuid)
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+            }
+
+            if (it.type == PhotoType.TEXT) {
+                GalleryTextTile(
+                    photo = it,
+                    multiSelectionActive = multiSelectionState.isActive.value,
+                    selected = multiSelectionState.selectedItems.value.contains(it.uuid),
+                    onClicked = onClicked,
+                    onLongPress = onLongPress,
+                    modifier = Modifier.animateItem(),
+                )
+            } else {
+                GalleryPhotoTile(
+                    photoTile = it,
+                    multiSelectionActive = multiSelectionState.isActive.value,
+                    onClicked = onClicked,
+                    selected = multiSelectionState.selectedItems.value.contains(it.uuid),
+                    onLongPress = onLongPress,
+                    modifier = Modifier.animateItem(),
+                )
+            }
         }
     }
 }
@@ -483,7 +557,7 @@ private fun PhotoGridPreview() {
                     PhotoTile("", PhotoType.JPEG, "1"),
                     PhotoTile("", PhotoType.MP4, "2"),
                     PhotoTile("", PhotoType.MP4, "3"),
-                    PhotoTile("", PhotoType.JPEG, "4"),
+                    PhotoTile("a_very_long_file_name.txt", PhotoType.TEXT, "4"),
                     PhotoTile("", PhotoType.JPEG, "5"),
                     PhotoTile("", PhotoType.MP4, "6"),
                 ),
@@ -512,7 +586,7 @@ private fun PhotoGridPreviewWithSelection() {
                     PhotoTile("", PhotoType.JPEG, "1"),
                     PhotoTile("", PhotoType.MP4, "2"),
                     PhotoTile("", PhotoType.MP4, "3"),
-                    PhotoTile("", PhotoType.JPEG, "4"),
+                    PhotoTile("a_very_long_file_name.txt", PhotoType.TEXT, "4"),
                     PhotoTile("", PhotoType.JPEG, "5"),
                     PhotoTile("", PhotoType.MP4, "6"),
                 ),

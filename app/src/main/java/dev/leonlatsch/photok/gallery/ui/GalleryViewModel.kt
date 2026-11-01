@@ -28,6 +28,7 @@ import dev.leonlatsch.photok.gallery.components.PhotoTile
 import dev.leonlatsch.photok.gallery.ui.importing.SharedUrisStore
 import dev.leonlatsch.photok.gallery.ui.navigation.GalleryNavigationEvent
 import dev.leonlatsch.photok.gallery.ui.navigation.PhotoAction
+import dev.leonlatsch.photok.model.database.entity.PhotoType
 import dev.leonlatsch.photok.model.repositories.ImportSource
 import dev.leonlatsch.photok.model.repositories.PhotoRepository
 import dev.leonlatsch.photok.sort.domain.SortConfig
@@ -119,7 +120,13 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun navigateToPhoto(item: PhotoTile) {
-        photoActionsChannel.trySend(PhotoAction.OpenPhoto(item.uuid))
+        val action = if (item.type == PhotoType.TEXT) {
+            PhotoAction.OpenText(item.uuid)
+        } else {
+            PhotoAction.OpenPhoto(item.uuid)
+        }
+
+        photoActionsChannel.trySend(action)
     }
 }
 

@@ -106,7 +106,7 @@ fun GalleryContentPreview() {
                     PhotoTile("", PhotoType.MP4, UUID.randomUUID().toString()),
                     PhotoTile("", PhotoType.GIF, UUID.randomUUID().toString()),
                     PhotoTile("", PhotoType.MPEG, "1"),
-                    PhotoTile("", PhotoType.PNG, UUID.randomUUID().toString()),
+                    PhotoTile("a.txt", PhotoType.TEXT, UUID.randomUUID().toString()),
                     PhotoTile("", PhotoType.PNG, UUID.randomUUID().toString()),
                     PhotoTile("", PhotoType.PNG, UUID.randomUUID().toString()),
                     PhotoTile("", PhotoType.PNG, UUID.randomUUID().toString()),
