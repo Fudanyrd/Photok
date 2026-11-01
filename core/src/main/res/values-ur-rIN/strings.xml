@@ -502,6 +502,10 @@
     <string name="cloud_backup_not_configured">Drive اسناد ترتیب نہیں دی گئیں</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
     <string name="cloud_backup_not_configured_help">کلاؤڈ بیک اپ فعال کرنے کے لیے اپنے Google Cloud OAuth کلائنٹ سے google.json فائل چسپاں کریں۔</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
     <string name="cloud_backup_credentials_import">google.json درآمد کریں</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_remove_credentials">اسناد ہٹائیں</string> <!-- TODO: machine translated | EN: Remove credentials -->
+    <string name="cloud_backup_remove_credentials_title">Drive اسناد ہٹائیں؟</string> <!-- TODO: machine translated | EN: Remove Drive credentials? -->
+    <string name="cloud_backup_remove_credentials_message">اس سے اس آلہ سے محفوظ کردہ google.json فائل ہٹ جائے گی۔ Google Drive میں آپ کے بیک اپ حذف نہیں ہوں گے۔ آپ کو google.json دوبارہ چسپاں کرکے دوبارہ منسلک ہونا ہوگا۔</string> <!-- TODO: machine translated | EN: This removes the saved google.json from this device. Your backups in Google Drive are not deleted. You will need to paste google.json and connect again. -->
+    <string name="cloud_backup_remove_credentials_confirm">ہٹائیں</string> <!-- TODO: machine translated | EN: Remove -->
     <string name="cloud_backup_credentials_json">OAuth کلائنٹ JSON</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
     <string name="cloud_backup_credentials_locked">اسناد مقفل ہیں</string> <!-- TODO: machine translated | EN: Credentials locked -->
     <string name="cloud_backup_credentials_unlock_title">Google Drive کو غیر مقفل کریں</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->

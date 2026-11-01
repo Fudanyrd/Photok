@@ -23,6 +23,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.leonlatsch.photok.backup.cloud.domain.CLOUD_BACKUP_KEEP
 import dev.leonlatsch.photok.backup.cloud.domain.CloudAuth
 import dev.leonlatsch.photok.backup.cloud.domain.CloudBackupRepository
+import dev.leonlatsch.photok.backup.cloud.domain.ClearCloudCredentialsUseCase
 import dev.leonlatsch.photok.backup.cloud.domain.CloudConnection
 import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsState
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
@@ -51,6 +52,7 @@ class CloudBackupViewModel @Inject constructor(
     private val createBackup: CreateCloudBackupUseCase,
     private val loadCredentials: LoadCloudCredentialsUseCase,
     private val storeCredentials: StoreCloudCredentialsUseCase,
+    private val clearCredentials: ClearCloudCredentialsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -157,6 +159,7 @@ class CloudBackupViewModel @Inject constructor(
 
             is CloudBackupUiEvent.CancelConnectClicked -> auth.cancelConnect()
             is CloudBackupUiEvent.DisconnectClicked -> disconnect()
+            is CloudBackupUiEvent.RemoveCredentialsClicked -> removeCredentials()
             is CloudBackupUiEvent.RefreshClicked -> requestCredentials(CloudPendingAction.Refresh) {
                 refreshInternal()
             }
@@ -309,6 +312,32 @@ class CloudBackupViewModel @Inject constructor(
             refreshJob = null
 
             auth.disconnect()
+
+            _uiState.update {
+                it.copy(
+                    backups = emptyList(),
+                    loadingBackups = false,
+                    busy = null,
+                    error = null,
+                    message = null,
+                    canceling = false,
+                    credentialsDialog = null,
+                    pendingAction = null,
+                    credentialsError = null,
+                    unlockingCredentials = false,
+                )
+            }
+        }
+    }
+
+    private fun removeCredentials() {
+        viewModelScope.launch {
+            busyJob?.cancelAndJoin()
+            busyJob = null
+            refreshJob?.cancel()
+            refreshJob = null
+
+            clearCredentials()
 
             _uiState.update {
                 it.copy(

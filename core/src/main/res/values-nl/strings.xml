@@ -500,6 +500,10 @@
     <string name="cloud_backup_not_configured">Drive-inloggegevens niet ingesteld</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
     <string name="cloud_backup_not_configured_help">Plak het bestand google.json uit je Google Cloud OAuth-client om cloudback-up in te schakelen.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
     <string name="cloud_backup_credentials_import">google.json importeren</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_remove_credentials">Inloggegevens verwijderen</string> <!-- TODO: machine translated | EN: Remove credentials -->
+    <string name="cloud_backup_remove_credentials_title">Drive-inloggegevens verwijderen?</string> <!-- TODO: machine translated | EN: Remove Drive credentials? -->
+    <string name="cloud_backup_remove_credentials_message">Hiermee wordt het opgeslagen google.json-bestand van dit apparaat verwijderd. Je back-ups in Google Drive worden niet verwijderd. Je moet google.json opnieuw plakken en opnieuw verbinding maken.</string> <!-- TODO: machine translated | EN: This removes the saved google.json from this device. Your backups in Google Drive are not deleted. You will need to paste google.json and connect again. -->
+    <string name="cloud_backup_remove_credentials_confirm">Verwijderen</string> <!-- TODO: machine translated | EN: Remove -->
     <string name="cloud_backup_credentials_json">OAuth-client-JSON</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
     <string name="cloud_backup_credentials_locked">Inloggegevens vergrendeld</string> <!-- TODO: machine translated | EN: Credentials locked -->
     <string name="cloud_backup_credentials_unlock_title">Google Drive ontgrendelen</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->

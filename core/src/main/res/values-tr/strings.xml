@@ -503,6 +503,10 @@
     <string name="cloud_backup_not_configured">Drive kimlik bilgileri ayarlanmadı</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
     <string name="cloud_backup_not_configured_help">Bulut yedeklemeyi etkinleştirmek için Google Cloud OAuth istemcinizdeki google.json dosyasını yapıştırın.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
     <string name="cloud_backup_credentials_import">google.json içe aktar</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_remove_credentials">Kimlik bilgilerini kaldır</string> <!-- TODO: machine translated | EN: Remove credentials -->
+    <string name="cloud_backup_remove_credentials_title">Drive kimlik bilgileri kaldırılsın mı?</string> <!-- TODO: machine translated | EN: Remove Drive credentials? -->
+    <string name="cloud_backup_remove_credentials_message">Bu, kayıtlı google.json dosyasını bu cihazdan kaldırır. Google Drive\'daki yedekleriniz silinmez. google.json dosyasını yeniden yapıştırıp tekrar bağlanmanız gerekir.</string> <!-- TODO: machine translated | EN: This removes the saved google.json from this device. Your backups in Google Drive are not deleted. You will need to paste google.json and connect again. -->
+    <string name="cloud_backup_remove_credentials_confirm">Kaldır</string> <!-- TODO: machine translated | EN: Remove -->
     <string name="cloud_backup_credentials_json">OAuth istemci JSON dosyası</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
     <string name="cloud_backup_credentials_locked">Kimlik bilgileri kilitli</string> <!-- TODO: machine translated | EN: Credentials locked -->
     <string name="cloud_backup_credentials_unlock_title">Google Drive kilidini aç</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->

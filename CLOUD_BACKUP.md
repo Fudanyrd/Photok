@@ -122,6 +122,10 @@ is stored encrypted and only decrypted into memory.
   token session; the user pastes `google.json` again. Never leave a file that the current
   password cannot open.
 - **Vault reset**: delete the credentials file and the OAuth token session.
+- **Manual clear**: the cloud backup screen offers a "Remove credentials" action that
+  deletes the credentials file and clears the OAuth token session locally. It does **not**
+  revoke the Google account grant or delete Drive backups. It is the way to update
+  credentials: clear, then paste the new `google.json`.
 
 The credentials are encrypted with the vault password only; there is no VMK-wrapped copy.
 Unlocking the vault with biometrics or a recovery phrase still requires the vault password

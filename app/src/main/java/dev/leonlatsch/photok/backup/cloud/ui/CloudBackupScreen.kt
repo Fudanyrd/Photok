@@ -127,6 +127,7 @@ private fun CloudBackupContent(
     onEvent: (CloudBackupUiEvent) -> Unit,
 ) {
     var deleteTarget by remember { mutableStateOf<RemoteBackup?>(null) }
+    var showRemoveCredentials by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -201,6 +202,7 @@ private fun CloudBackupContent(
                     state = state,
                     browser = browser,
                     onEvent = onEvent,
+                    onRemoveCredentials = { showRemoveCredentials = true },
                 )
             }
 
@@ -305,6 +307,29 @@ private fun CloudBackupContent(
             },
         )
     }
+
+    if (showRemoveCredentials) {
+        AlertDialog(
+            onDismissRequest = { showRemoveCredentials = false },
+            title = { Text(stringResource(R.string.cloud_backup_remove_credentials_title)) },
+            text = { Text(stringResource(R.string.cloud_backup_remove_credentials_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRemoveCredentials = false
+                        onEvent(CloudBackupUiEvent.RemoveCredentialsClicked)
+                    }
+                ) {
+                    Text(stringResource(R.string.cloud_backup_remove_credentials_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveCredentials = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -312,6 +337,7 @@ private fun ConnectionCard(
     state: CloudBackupUiState,
     browser: OAuthBrowser?,
     onEvent: (CloudBackupUiEvent) -> Unit,
+    onRemoveCredentials: () -> Unit,
 ) {
     val subtitle = when {
         state.isConnected -> state.accountEmail?.let {
@@ -384,6 +410,18 @@ private fun ConnectionCard(
                     enabled = browser != null && state.canInteract,
                 ) {
                     Text(stringResource(R.string.cloud_backup_connect))
+                }
+            }
+
+            if (state.hasCredentials) {
+                TextButton(
+                    onClick = onRemoveCredentials,
+                    enabled = state.canInteract,
+                ) {
+                    Text(
+                        text = stringResource(R.string.cloud_backup_remove_credentials),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
         }

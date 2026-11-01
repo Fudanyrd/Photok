@@ -505,6 +505,10 @@
     <string name="cloud_backup_not_configured">Credenciais do Drive não configuradas</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
     <string name="cloud_backup_not_configured_help">Cole o arquivo google.json do seu cliente OAuth do Google Cloud para ativar o backup na nuvem.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
     <string name="cloud_backup_credentials_import">Importar google.json</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_remove_credentials">Remover credenciais</string> <!-- TODO: machine translated | EN: Remove credentials -->
+    <string name="cloud_backup_remove_credentials_title">Remover credenciais do Drive?</string> <!-- TODO: machine translated | EN: Remove Drive credentials? -->
+    <string name="cloud_backup_remove_credentials_message">Isso remove o google.json salvo deste dispositivo. Seus backups no Google Drive não são excluídos. Você precisará colar o google.json novamente e reconectar.</string> <!-- TODO: machine translated | EN: This removes the saved google.json from this device. Your backups in Google Drive are not deleted. You will need to paste google.json and connect again. -->
+    <string name="cloud_backup_remove_credentials_confirm">Remover</string> <!-- TODO: machine translated | EN: Remove -->
     <string name="cloud_backup_credentials_json">JSON do cliente OAuth</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
     <string name="cloud_backup_credentials_locked">Credenciais bloqueadas</string> <!-- TODO: machine translated | EN: Credentials locked -->
     <string name="cloud_backup_credentials_unlock_title">Desbloquear o Google Drive</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->

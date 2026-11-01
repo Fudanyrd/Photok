@@ -19,6 +19,7 @@ package dev.leonlatsch.photok.backup.cloud.ui
 import dev.leonlatsch.photok.backup.cloud.domain.CloudArchive
 import dev.leonlatsch.photok.backup.cloud.domain.CloudAuth
 import dev.leonlatsch.photok.backup.cloud.domain.CloudBackupRepository
+import dev.leonlatsch.photok.backup.cloud.domain.ClearCloudCredentialsUseCase
 import dev.leonlatsch.photok.backup.cloud.domain.CloudConnection
 import dev.leonlatsch.photok.backup.cloud.domain.CloudCredentialsState
 import dev.leonlatsch.photok.backup.cloud.domain.CloudError
@@ -67,6 +68,7 @@ class CloudBackupViewModelTest {
     private lateinit var createBackup: CreateCloudBackupUseCase
     private lateinit var loadCredentials: LoadCloudCredentialsUseCase
     private lateinit var storeCredentials: StoreCloudCredentialsUseCase
+    private lateinit var clearCredentials: ClearCloudCredentialsUseCase
     private lateinit var credentialsState: MutableStateFlow<CloudCredentialsState>
     private lateinit var lastError: MutableStateFlow<CloudError?>
 
@@ -80,6 +82,7 @@ class CloudBackupViewModelTest {
         createBackup = mockk(relaxed = true)
         loadCredentials = mockk(relaxed = true)
         storeCredentials = mockk(relaxed = true)
+        clearCredentials = mockk(relaxed = true)
         credentialsState = MutableStateFlow(CloudCredentialsState.Unlocked)
         lastError = MutableStateFlow(null)
 
@@ -363,11 +366,35 @@ class CloudBackupViewModelTest {
         viewModel.viewModelScope.cancel()
     }
 
+    @Test
+    fun `removing credentials clears them and resets the screen`() = runTest(dispatcher) {
+        every { auth.connection } returns MutableStateFlow(
+            CloudConnection.Connected("me@example.com")
+        )
+        coEvery { repository.listBackups() } returns Result.success(emptyList())
+
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        viewModel.handleUiEvent(CloudBackupUiEvent.RemoveCredentialsClicked)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { clearCredentials() }
+        assertTrue(viewModel.uiState.value.backups.isEmpty())
+        assertNull(viewModel.uiState.value.busy)
+        assertNull(viewModel.uiState.value.credentialsDialog)
+        assertNull(viewModel.uiState.value.pendingAction)
+        assertNull(viewModel.uiState.value.error)
+
+        viewModel.viewModelScope.cancel()
+    }
+
     private fun viewModel() = CloudBackupViewModel(
         auth = auth,
         repository = repository,
         createBackup = createBackup,
         loadCredentials = loadCredentials,
         storeCredentials = storeCredentials,
+        clearCredentials = clearCredentials,
     )
 }

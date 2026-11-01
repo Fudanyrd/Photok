@@ -38,6 +38,8 @@ sealed interface CloudBackupUiEvent {
 
     data object DisconnectClicked : CloudBackupUiEvent
 
+    data object RemoveCredentialsClicked : CloudBackupUiEvent
+
     data object RefreshClicked : CloudBackupUiEvent
 
     data object BackupClicked : CloudBackupUiEvent

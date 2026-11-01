@@ -502,6 +502,10 @@
     <string name="cloud_backup_not_configured">Identifiants Drive non configurés</string> <!-- TODO: machine translated | EN: Drive credentials not set up -->
     <string name="cloud_backup_not_configured_help">Collez le fichier google.json de votre client OAuth Google Cloud pour activer la sauvegarde cloud.</string> <!-- TODO: machine translated | EN: Paste the google.json file from your Google Cloud OAuth client to enable cloud backup. -->
     <string name="cloud_backup_credentials_import">Importer google.json</string> <!-- TODO: machine translated | EN: Import google.json -->
+    <string name="cloud_backup_remove_credentials">Supprimer les identifiants</string> <!-- TODO: machine translated | EN: Remove credentials -->
+    <string name="cloud_backup_remove_credentials_title">Supprimer les identifiants Drive ?</string> <!-- TODO: machine translated | EN: Remove Drive credentials? -->
+    <string name="cloud_backup_remove_credentials_message">Cela supprime le fichier google.json enregistré de cet appareil. Vos sauvegardes dans Google Drive ne sont pas supprimées. Vous devrez coller à nouveau google.json et vous reconnecter.</string> <!-- TODO: machine translated | EN: This removes the saved google.json from this device. Your backups in Google Drive are not deleted. You will need to paste google.json and connect again. -->
+    <string name="cloud_backup_remove_credentials_confirm">Supprimer</string> <!-- TODO: machine translated | EN: Remove -->
     <string name="cloud_backup_credentials_json">JSON du client OAuth</string> <!-- TODO: machine translated | EN: OAuth client JSON -->
     <string name="cloud_backup_credentials_locked">Identifiants verrouillés</string> <!-- TODO: machine translated | EN: Credentials locked -->
     <string name="cloud_backup_credentials_unlock_title">Déverrouiller Google Drive</string> <!-- TODO: machine translated | EN: Unlock Google Drive -->
