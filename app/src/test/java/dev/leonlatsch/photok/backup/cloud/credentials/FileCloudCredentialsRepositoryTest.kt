@@ -38,9 +38,10 @@ import java.io.File
 class FileCloudCredentialsRepositoryTest {
 
     private val context = RuntimeEnvironment.getApplication()
+    private val cipher = CloudCredentialsCipher(KeyGen())
     private val repository = FileCloudCredentialsRepository(
         context = context,
-        cipher = CloudCredentialsCipher(KeyGen()),
+        cipher = cipher,
         parser = DriveCredentialsParser(),
         gson = Gson(),
     )
@@ -122,6 +123,57 @@ class FileCloudCredentialsRepositoryTest {
 
         assertTrue(repository.reencrypt("wrong-password", "new-password").isFailure)
         assertFalse(repository.exists())
+    }
+
+    @Test
+    fun `upgradeIfOutdated re-encrypts a legacy file to the current iterations`() = runTest {
+        writeLegacyEnvelope(iterations = 100_000)
+
+        repository.upgradeIfOutdated("password").getOrThrow()
+
+        assertEquals(
+            CloudCredentialsCipher.TARGET_ITERATIONS,
+            cipher.iterations(credentialsFile().readBytes()),
+        )
+        assertEquals("id", repository.load("password").getOrThrow().clientId)
+    }
+
+    @Test
+    fun `upgradeIfOutdated is a no-op for a current file`() = runTest {
+        repository.store(json, "password").getOrThrow()
+        val before = credentialsFile().readBytes()
+
+        repository.upgradeIfOutdated("password").getOrThrow()
+
+        assertArrayEquals(before, credentialsFile().readBytes())
+    }
+
+    @Test
+    fun `upgradeIfOutdated reports missing when the file is absent`() = runTest {
+        val result = repository.upgradeIfOutdated("password")
+
+        assertTrue(result.exceptionOrNull() is CloudError.CredentialsMissing)
+    }
+
+    @Test
+    fun `failed upgrade keeps the legacy file readable`() = runTest {
+        writeLegacyEnvelope(iterations = 100_000)
+
+        assertTrue(repository.upgradeIfOutdated("wrong-password").isFailure)
+
+        assertEquals("id", repository.load("password").getOrThrow().clientId)
+    }
+
+    private fun writeLegacyEnvelope(iterations: Int) {
+        val file = credentialsFile()
+        file.parentFile?.mkdirs()
+        file.writeBytes(
+            legacyCredentialsEnvelope(
+                plaintext = """{"clientId":"id","clientSecret":"secret"}""".toByteArray(),
+                password = "password",
+                iterations = iterations,
+            )
+        )
     }
 
     private fun credentialsFile(): File =

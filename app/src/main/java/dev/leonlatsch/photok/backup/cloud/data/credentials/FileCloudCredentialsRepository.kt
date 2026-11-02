@@ -99,6 +99,28 @@ class FileCloudCredentialsRepository @Inject constructor(
         }
     }
 
+    override suspend fun upgradeIfOutdated(password: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            val file = credentialsFile()
+            if (!file.exists()) {
+                return@withContext Result.failure(CloudError.CredentialsMissing())
+            }
+
+            try {
+                if (cipher.iterations(file.readBytes()) >= CloudCredentialsCipher.TARGET_ITERATIONS) {
+                    return@withContext Result.success(Unit)
+                }
+
+                val credentials = load(password).getOrThrow()
+                write(credentials, password)
+                Timber.i("Upgraded Drive credentials to current KDF iterations")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to upgrade Drive credentials, keeping the old file")
+                Result.failure(e)
+            }
+        }
+
     private fun write(credentials: DriveClientCredentials, password: String) {
         val plaintext = gson.toJson(credentials).toByteArray(Charsets.UTF_8)
         val encrypted = cipher.encrypt(plaintext, password)

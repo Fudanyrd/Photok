@@ -19,6 +19,7 @@ package dev.leonlatsch.photok.backup.cloud.credentials
 import dev.leonlatsch.photok.backup.cloud.data.auth.CloudCredentialsCipher
 import dev.leonlatsch.photok.encryption.domain.crypto.KeyGen
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -35,6 +36,28 @@ class CloudCredentialsCipherTest {
         val encrypted = cipher.encrypt(plaintext, "password")
 
         assertArrayEquals(plaintext, cipher.decrypt(encrypted, "password"))
+    }
+
+    @Test
+    fun `encrypt records the current target iterations`() {
+        val encrypted = cipher.encrypt(plaintext, "password")
+
+        assertEquals(CloudCredentialsCipher.TARGET_ITERATIONS, cipher.iterations(encrypted))
+        assertEquals(300_000, CloudCredentialsCipher.TARGET_ITERATIONS)
+    }
+
+    @Test
+    fun `iterations reads the recorded count`() {
+        val legacy = legacyCredentialsEnvelope(plaintext, "password", iterations = 100_000)
+
+        assertEquals(100_000, cipher.iterations(legacy))
+    }
+
+    @Test
+    fun `decrypts an envelope written with legacy 100k iterations`() {
+        val legacy = legacyCredentialsEnvelope(plaintext, "password", iterations = 100_000)
+
+        assertArrayEquals(plaintext, cipher.decrypt(legacy, "password"))
     }
 
     @Test

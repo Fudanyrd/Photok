@@ -20,6 +20,7 @@ import dev.leonlatsch.photok.encryption.domain.crypto.KeyGen
 import dev.leonlatsch.photok.encryption.domain.crypto.SALT_SIZE
 import dev.leonlatsch.photok.encryption.domain.models.Algorithm
 import dev.leonlatsch.photok.encryption.domain.models.Kdf
+import dev.leonlatsch.photok.encryption.domain.models.KekSpec
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -48,7 +49,7 @@ class CloudCredentialsCipher @Inject constructor(
             password = password,
             salt = salt,
             kdf = Kdf.PBKDF2WithHmacSHA256,
-            kdfIterations = KDF_ITERATIONS,
+            kdfIterations = TARGET_ITERATIONS,
             keySize = KEY_SIZE,
         )
 
@@ -62,7 +63,7 @@ class CloudCredentialsCipher @Inject constructor(
         return ByteArrayOutputStream().use { output ->
             DataOutputStream(output).use { data ->
                 data.writeByte(VERSION)
-                data.writeInt(KDF_ITERATIONS)
+                data.writeInt(TARGET_ITERATIONS)
                 data.write(salt)
                 data.writeByte(iv.size)
                 data.write(iv)
@@ -104,12 +105,32 @@ class CloudCredentialsCipher @Inject constructor(
         return cipher.doFinal(ciphertext)
     }
 
-    private companion object {
+    /**
+     * Reads the KDF iteration count recorded in [envelope] without decrypting it. Used to decide
+     * whether an already stored credentials file needs to be upgraded to the current iterations.
+     */
+    fun iterations(envelope: ByteArray): Int {
+        val input = DataInputStream(ByteArrayInputStream(envelope))
+
+        val version = input.readUnsignedByte()
+        require(version == VERSION) { "Unsupported credentials envelope version" }
+
+        val iterations = input.readInt()
+        require(iterations > 0) { "Invalid KDF iterations" }
+
+        return iterations
+    }
+
+    companion object {
         const val VERSION = 1
-        const val KDF_ITERATIONS = 100_000
-        const val KEY_SIZE = 256
-        const val TAG_BITS = 128
-        const val MIN_IV_SIZE = 12
-        const val MAX_IV_SIZE = 16
+
+        // Match the password-derived KEK strength of the vault. Only the KDF params are shared;
+        // this envelope still uses AES-GCM rather than the vault's AES-CBC.
+        val TARGET_ITERATIONS: Int = KekSpec.Password.kdfIterations
+
+        private const val KEY_SIZE = 256
+        private const val TAG_BITS = 128
+        private const val MIN_IV_SIZE = 12
+        private const val MAX_IV_SIZE = 16
     }
 }

@@ -41,4 +41,11 @@ interface CloudCredentialsRepository {
      * old credentials cannot be read or the new file cannot be written.
      */
     suspend fun reencrypt(oldPassword: String, newPassword: String): Result<Unit>
+
+    /**
+     * Re-encrypts the stored credentials with the current KDF iteration count when they were
+     * written with an older count. A no-op for missing or already-current files. Failures leave
+     * the existing file untouched and are reported through the returned [Result].
+     */
+    suspend fun upgradeIfOutdated(password: String): Result<Unit>
 }

@@ -38,6 +38,7 @@ class LoadCloudCredentialsUseCase @Inject constructor(
         return repository.load(password).fold(
             onSuccess = { credentials ->
                 session.unlock(credentials)
+                repository.upgradeIfOutdated(password)
                 Result.success(credentials)
             },
             onFailure = { error ->

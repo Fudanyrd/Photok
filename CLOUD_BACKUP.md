@@ -102,8 +102,9 @@ is stored encrypted and only decrypted into memory.
 - **File**: `noBackupFilesDir/cloud/drive-credentials.enc`. `noBackupFilesDir` keeps the
   secret out of Android Auto Backup; it is also not part of the local backup zip.
 - **Envelope**: `[version][kdfIterations][salt][nonce/iv][ciphertext]`.
-- **Crypto**: PBKDF2-HMAC-SHA256 (100k iterations, 256-bit key) + AES-GCM. A wrong
-  password or corrupted file fails closed instead of silently producing garbage.
+- **Crypto**: PBKDF2-HMAC-SHA256 (300k iterations, 256-bit key) + AES-GCM. The iteration
+  count matches the vault's password-derived KEK (`KekSpec.Password`). A wrong password or
+  corrupted file fails closed instead of silently producing garbage.
 - **Import**: JSON + vault password. Malformed JSON is rejected before anything is
   written.
 - **Unlock**: before the first cloud operation in an unlocked vault session, the user
@@ -112,6 +113,9 @@ is stored encrypted and only decrypted into memory.
   locked.
 - **Wrong password**: show "wrong vault password", leave the encrypted file untouched.
 - **Corrupt/unreadable file**: show a re-import prompt and do not keep trying to decrypt.
+- **KDF upgrade**: after a successful unlock, a file written with an older iteration count
+  is re-encrypted with the current 300k count. A failed upgrade leaves the old file in
+  place and does not affect the unlock.
 - **Session cache**: `CloudCredentialsSession` holds the decrypted credentials in memory
   for the whole unlocked vault session. They are intentionally retained across individual
   Drive requests so silent access-token refresh and the post-`401` retry work. They are
