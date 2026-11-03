@@ -75,40 +75,44 @@ fun TextViewerScreen(photoUuid: String) {
             )
         },
     ) { contentPadding ->
-        when (val state = uiState) {
-            is TextViewerUiState.Loading -> Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            ) {
-                CircularProgressIndicator()
-            }
+        TextViewerContent(
+            state = uiState,
+            modifier = Modifier.padding(contentPadding),
+        )
+    }
+}
 
-            is TextViewerUiState.Error -> Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            ) {
-                Text(stringResource(R.string.common_error))
-            }
+/**
+ * Scrollable, selectable text content for the [TextViewerUiState], without any surrounding
+ * chrome. Used both by the standalone [TextViewerScreen] route and inline by the ImageViewer.
+ */
+@Composable
+fun TextViewerContent(
+    state: TextViewerUiState,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        when (state) {
+            is TextViewerUiState.Loading -> CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+            )
 
-            is TextViewerUiState.Content -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
+            is TextViewerUiState.Error -> Text(
+                text = stringResource(R.string.common_error),
+                modifier = Modifier.align(Alignment.Center),
+            )
+
+            is TextViewerUiState.Content -> SelectionContainer(
+                modifier = Modifier.fillMaxSize(),
             ) {
-                SelectionContainer {
-                    Text(
-                        text = state.text,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp),
-                    )
-                }
+                Text(
+                    text = state.text,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                )
             }
         }
     }

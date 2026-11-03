@@ -26,6 +26,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -44,6 +46,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -70,6 +73,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -79,6 +84,8 @@ import dev.leonlatsch.photok.R
 import dev.leonlatsch.photok.imageviewer.ui.ImageViewerItem
 import dev.leonlatsch.photok.imageviewer.ui.ImageViewerUiEvent
 import dev.leonlatsch.photok.imageviewer.ui.ImageViewerUiState
+import dev.leonlatsch.photok.textviewer.ui.TextViewerViewModel
+import dev.leonlatsch.photok.textviewer.ui.compose.TextViewerContent
 import dev.leonlatsch.photok.transcoding.compose.model.EncryptedImageRequestData
 import dev.leonlatsch.photok.transcoding.compose.rememberEncryptedImagePainter
 import dev.leonlatsch.photok.ui.theme.Dimens
@@ -146,6 +153,44 @@ fun BoxScope.ImageViewerImagePage(
             painter = painter,
             contentDescription = photo.fileName,
             modifier = Modifier.fillMaxSize(),
+        )
+    }
+
+    TopGradient(visible = uiState.inputs.showControls)
+    BottomGradient(visible = uiState.inputs.showControls)
+}
+
+@Composable
+fun BoxScope.ImageViewerTextPage(
+    item: ImageViewerItem.Text,
+    uiState: ImageViewerUiState,
+    handleUiEvent: (ImageViewerUiEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val photoUuid = item.photo.uuid
+
+    val viewModel: TextViewerViewModel = hiltViewModel<TextViewerViewModel, TextViewerViewModel.Factory>(
+        key = photoUuid,
+        creationCallback = { factory -> factory.create(photoUuid) },
+    )
+    val textUiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) {
+                handleUiEvent(ImageViewerUiEvent.ToggleShowControls)
+            },
+    ) {
+        TextViewerContent(
+            state = textUiState,
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
         )
     }
 

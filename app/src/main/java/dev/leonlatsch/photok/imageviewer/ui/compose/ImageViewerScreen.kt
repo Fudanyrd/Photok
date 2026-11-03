@@ -279,6 +279,12 @@ fun ImageViewerScreen(
                         handleUiEvent = handleUiEvent,
                     )
 
+                    is ImageViewerItem.Text -> ImageViewerTextPage(
+                        item = item,
+                        uiState = uiState,
+                        handleUiEvent = handleUiEvent,
+                    )
+
                     is ImageViewerItem.Video -> ImageViewerVideoPage(
                         item = item,
                         isCurrentItem = item.photo.uuid == currentItem?.photo?.uuid,

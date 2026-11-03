@@ -32,6 +32,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.leonlatsch.photok.encryption.domain.SessionRepository
 import dev.leonlatsch.photok.gallery.albums.domain.AlbumRepository
 import dev.leonlatsch.photok.model.database.entity.Photo
+import dev.leonlatsch.photok.model.database.entity.PhotoType
 import dev.leonlatsch.photok.model.repositories.PhotoRepository
 import dev.leonlatsch.photok.settings.data.Config
 import dev.leonlatsch.photok.sort.domain.SortConfig
@@ -119,6 +120,8 @@ class ImageViewerViewModel @AssistedInject constructor(
                         photo = photo,
                         mediaItem = createMediaItem(photo)
                     )
+                } else if (photo.type.isText) {
+                    ImageViewerItem.Text(photo)
                 } else {
                     ImageViewerItem.Image(
                         photo = photo

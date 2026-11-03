@@ -196,6 +196,7 @@ fun ImageViewerControls(
                 derivedStateOf {
                     when (currentItem) {
                         is ImageViewerItem.Image -> showControls
+                        is ImageViewerItem.Text -> showControls
                         is ImageViewerItem.Video -> showControls && configuration.orientation != ORIENTATION_LANDSCAPE
                         null -> showControls
                     }

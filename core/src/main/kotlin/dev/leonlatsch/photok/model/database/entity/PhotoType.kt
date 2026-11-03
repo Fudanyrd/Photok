@@ -42,6 +42,9 @@ enum class PhotoType(
             else -> false
         }
 
+    val isText: Boolean
+        get() = (this == TEXT)
+
     companion object {
         fun fromValue(value: Int) = entries.firstOrNull { it.value == value } ?: UNDEFINED
 

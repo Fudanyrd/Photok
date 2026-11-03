@@ -23,4 +23,5 @@ sealed interface ImageViewerItem {
     val photo: Photo
     data class Image(override val photo: Photo) : ImageViewerItem
     data class Video(override val photo: Photo, val mediaItem: MediaItem) : ImageViewerItem
+    data class Text(override val photo: Photo) : ImageViewerItem
 }
