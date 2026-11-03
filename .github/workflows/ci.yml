@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     # Forks have no access to the private pro submodule (PRO_DEPLOY_KEY), so skip
     # this job entirely in fork repositories, and also skip forked PRs upstream.
-    if: (!github.event.repository.fork) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - uses: actions/checkout@v7
         with:
