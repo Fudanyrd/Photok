@@ -95,6 +95,17 @@ fun GalleryContent(
     )
 }
 
+/**
+ * Only render this preview inside Android Studio's Layoutlib previewer.
+ *
+ * Do not run it on a device or emulator: it composes [PhotoGallery], whose
+ * `PhotoGrid` resolves the Hilt-injected `ProGalleryBannerViewModel`. The
+ * deployed preview runs in `androidx.compose.ui.tooling.PreviewActivity`,
+ * which is not a Hilt component
+ * and does not provide `LocalInspectionMode`, so `LocalInspectionMode.current`
+ * is `false` there and the Hilt lookup throws an `IllegalStateException`,
+ * crashing the app.
+ */
 @Preview(showBackground = true, backgroundColor = 0xFFFFFF, showSystemUi = true)
 @Composable
 fun GalleryContentPreview() {
@@ -126,4 +137,3 @@ fun GalleryContentPreview() {
         )
     }
 }
-
