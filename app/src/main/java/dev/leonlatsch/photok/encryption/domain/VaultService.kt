@@ -20,14 +20,12 @@ import dev.leonlatsch.photok.encryption.domain.handlers.VaultProtectionHandler
 import dev.leonlatsch.photok.encryption.domain.models.CreateRequest
 import dev.leonlatsch.photok.encryption.domain.models.KekSpec
 import dev.leonlatsch.photok.encryption.domain.models.UnlockRequest
-import dev.leonlatsch.photok.encryption.domain.models.VaultProtection
 import dev.leonlatsch.photok.encryption.domain.models.VaultProtectionType
 import dev.leonlatsch.photok.encryption.domain.models.VaultSession
 import dev.leonlatsch.photok.settings.data.Config
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Dispatcher
 import timber.log.Timber
 import javax.crypto.SecretKey
 import javax.inject.Inject
@@ -39,11 +37,11 @@ class VaultService @Inject constructor(
     private val recoveryPhraseProtectionHandler: VaultProtectionHandler<UnlockRequest.RecoveryPhrase, CreateRequest.RecoveryPhrase>,
     private val config: Config,
 ) {
-    suspend fun unlock(request: UnlockRequest): Result<VaultSession> = withContext(Dispatchers.IO) {
+    suspend fun unlock(request: UnlockRequest): Result<VaultSession> {
         val type = request.protectionType
         var protection = vaultProtectionRepository.getProtection(type)
 
-        runCatching {
+        return runCatching {
             val vmk = when (request) {
                 is UnlockRequest.Password -> {
                     if (protection == null) {
@@ -93,7 +91,7 @@ class VaultService @Inject constructor(
         }
     }
 
-    suspend fun create(request: CreateRequest) = withContext(Dispatchers.IO) {
+    suspend fun create(request: CreateRequest) {
         val protection = when (request) {
             is CreateRequest.Password -> passwordProtectionHandler.create(request)
             is CreateRequest.Biometric -> biometricProtectionHandler.create(request)
