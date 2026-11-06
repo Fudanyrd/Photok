@@ -84,6 +84,7 @@ jobs:
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
+          test -n "$PLAY_SERVICE_ACCOUNT_JSON"
           echo "$PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play-service-account.json"
           echo "PLAY_JSON_KEY_FILE=$RUNNER_TEMP/play-service-account.json" >> "$GITHUB_ENV"
 
