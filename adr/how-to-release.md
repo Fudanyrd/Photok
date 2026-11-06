@@ -24,6 +24,18 @@ After merging into master you can run the "Build and Upload Signed Release" GitH
 This will, on master, build a standalone and Google Play version of Photok and sign it.
 These Artifacts will be uploaded to GitHub and to leonlatsch's private cloud.
 
+How to do this locally:
+
+```sh
+./gradlew assembleFossRelease assemblePlayRelease \
+  -p . \
+  -Pandroid.injected.signing.store.file=keystore.jks \
+  -Pandroid.injected.signing.store.password=? \
+  -Pandroid.injected.signing.key.alias=? \
+  -Pandroid.injected.signing.key.password=? \
+  -PtelemetryDeckAppId=?
+```
+
 ## 4. Create GitHub & GPlay Release
 
 ### Preparations
