@@ -36,7 +36,7 @@ import kotlin.time.Duration.Companion.days
  * @since 1.0.0
  * @author Leon Latsch
  */
-class Config(context: Context) {
+class Config(context: Context) : PlainConfig<String> {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -236,7 +236,7 @@ class Config(context: Context) {
 
     fun getString(key: String, default: String?) = preferences.getString(key, default)
 
-    fun getInt(key: String, default: Int) = preferences.getInt(key, default)
+    override fun getInt(key: String, default: Int) = preferences.getInt(key, default)
 
     fun getIntFromString(key: String, default: Int): Int {
         val stringValue = preferences.getString(key, default.toString())
@@ -246,14 +246,14 @@ class Config(context: Context) {
     fun getIntOrNull(key: String): Int? =
         if (preferences.contains(key)) preferences.getInt(key, 0) else null
 
-    fun getLong(key: String, default: Long): Long = preferences.getLong(key, default)
+    override fun getLong(key: String, default: Long): Long = preferences.getLong(key, default)
 
     fun getLongOrNull(key: String): Long? =
         if (preferences.contains(key)) preferences.getLong(key, 0L) else null
 
-    fun getBoolean(key: String, default: Boolean) = preferences.getBoolean(key, default)
+    override fun getBoolean(key: String, default: Boolean) = preferences.getBoolean(key, default)
 
-    fun getFloat(key: String, default: Float) = preferences.getFloat(key, default)
+    override fun getFloat(key: String, default: Float) = preferences.getFloat(key, default)
 
     fun putString(key: String, value: String?) {
         preferences.edit {
@@ -261,7 +261,7 @@ class Config(context: Context) {
         }
     }
 
-    fun putInt(key: String, value: Int) {
+    override fun putInt(key: String, value: Int) {
         preferences.edit {
             putInt(key, value)
         }
@@ -273,13 +273,13 @@ class Config(context: Context) {
         }
     }
 
-    fun putBoolean(key: String, value: Boolean) {
+    override fun putBoolean(key: String, value: Boolean) {
         preferences.edit {
             putBoolean(key, value)
         }
     }
 
-    fun putLong(key: String, value: Long) {
+    override fun putLong(key: String, value: Long) {
         preferences.edit {
             putLong(key, value)
         }
@@ -291,7 +291,7 @@ class Config(context: Context) {
         }
     }
 
-    fun putFloat(key: String, value: Float) {
+    override fun putFloat(key: String, value: Float) {
         preferences.edit {
             putFloat(key, value)
         }
