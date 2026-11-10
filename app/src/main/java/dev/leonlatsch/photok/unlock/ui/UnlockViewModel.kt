@@ -137,7 +137,15 @@ class UnlockViewModel @Inject constructor(
     }
 
     private fun dismissLockout() {
-        passwordAttemptsUseCase.onSuccessfulUnlock()
+        /**
+         * Previous implementation (which is invoking [PasswordAttemptsUseCase.onSuccessfulUnlock]
+         * ) is buggy. The reason is that in pro module, this clears counter of # total failures.
+         * This affects erasing-vault functionality.
+         *
+         * This is safe because the use case already handles expired lockouts on the next
+         * interaction via [dev.leonlatsch.photok.pro.PasswordAttemptsUseCaseImpl.clearExpiredLockout]
+         * , which resets only `KEY_LOCKED_UNTIL` and `KEY_CONSECUTIVE_FAILURES`.
+         */
         _uiState.update { it.copy(lockedUntil = null) }
     }
 
