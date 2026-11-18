@@ -14,7 +14,8 @@ require "fileutils"
 
 default_platform(:android)
 
-REPO = "leonlatsch/Photok".freeze
+# Previous value is hard-coded, causing release workflow to fail.
+REPO = (ENV["REPO_NAME"] || "leonlatsch/Photok").freeze
 
 platform :android do
   #

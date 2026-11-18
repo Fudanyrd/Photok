@@ -52,6 +52,7 @@ jobs:
           # GitHub release + tag
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
+          REPO_NAME: ${{ github.repository }}
         run: bundle exec fastlane release_foss
 
   release-play:
@@ -96,4 +97,5 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           # Build config
           TELEMETRY_DECK_APP_ID: ${{ secrets.TELEMETRY_DECK_APP_ID }}
+          REPO_NAME: ${{ github.repository }}
         run: bundle exec fastlane release_play
